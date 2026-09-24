@@ -1,0 +1,126 @@
+.nav-container {
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+/* ============================
+   BRAND
+   ============================ */
+
+.brand {
+    min-height: 138px;
+    display: flex;
+    align-items: center;
+    padding: 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.brand-logo {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: #0866d5;
+    border: 2px solid #ef233c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.brand-text {
+    margin-left: 12px;
+}
+
+.brand-title {
+    font-size: 18px;
+    line-height: 18px;
+    font-weight: 800;
+    color: white;
+}
+
+.brand-subtitle {
+    margin-top: 8px;
+    font-size: 8px;
+    letter-spacing: .3px;
+    color: #cbdcf3;
+}
+
+/* ============================
+   NAVIGATION
+   ============================ */
+
+.navigation {
+    padding: 22px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.nav-item {
+    height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 13px;
+    border-radius: 8px;
+    color: #e7f0ff;
+    text-decoration: none;
+    font-size: 14px;
+    transition: .2s ease;
+}
+
+    .nav-item:hover {
+        background: rgba(255,255,255,.1);
+        color: white;
+    }
+
+    .nav-item.active {
+        background: linear-gradient( 90deg, #0877ef, #0755b7 );
+        color: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,.15);
+    }
+
+.nav-icon {
+    width: 23px;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* ============================
+   FOOTER
+   ============================ */
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 20px 22px 28px;
+}
+
+.motto {
+    font-family: Georgia, serif;
+    font-style: italic;
+    color: white;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.motto-line {
+    width: 100px;
+    height: 3px;
+    background: #ef233c;
+    margin-top: 10px;
+}
+
+.logout-link {
+    margin-top: 25px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+}

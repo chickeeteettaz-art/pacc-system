@@ -1,0 +1,180 @@
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #f4f8fd;
+}
+
+/* ============================
+   SIDEBAR
+   ============================ */
+
+.sidebar {
+    width: 258px;
+    min-width: 258px;
+    background: linear-gradient( 180deg, #062a59 0%, #05234b 100% );
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+}
+
+/* ============================
+   MAIN CONTENT
+   ============================ */
+
+.main-content {
+    margin-left: 258px;
+    width: calc(100% - 258px);
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/* ============================
+   HEADER
+   ============================ */
+
+.top-header {
+    height: 76px;
+    background: linear-gradient( 90deg, #073d83, #0759b7 );
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    color: white;
+}
+
+.header-spacer {
+    flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* Search */
+
+.header-search {
+    width: 270px;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,.4);
+    border-radius: 24px;
+    background: transparent;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    cursor: pointer;
+}
+
+    .header-search span:last-child {
+        color: #d7e6fa;
+    }
+
+/* Notifications */
+
+.notification-button {
+    position: relative;
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 18px;
+    height: 18px;
+    background: #ef233c;
+    border-radius: 50%;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* User */
+
+.user-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14px;
+}
+
+.user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: white;
+    color: #0759b7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.dropdown-arrow {
+    font-size: 16px;
+}
+
+/* ============================
+   PAGE
+   ============================ */
+
+.page-content {
+    padding: 24px;
+}
+
+/* ============================
+   RESPONSIVE
+   ============================ */
+
+@media (max-width: 900px) {
+
+    .sidebar {
+        width: 220px;
+        min-width: 220px;
+    }
+
+    .main-content {
+        margin-left: 220px;
+        width: calc(100% - 220px);
+    }
+
+    .header-search {
+        width: 200px;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .sidebar {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .top-header {
+        padding: 0 15px;
+    }
+
+    .header-search {
+        display: none;
+    }
+
+    .page-content {
+        padding: 15px;
+    }
+}

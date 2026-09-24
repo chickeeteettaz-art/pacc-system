@@ -1,0 +1,7 @@
+.auth-layout {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: #f4f8fd;
+    overflow-x: hidden;
+}

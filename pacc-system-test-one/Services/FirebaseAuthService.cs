@@ -1,0 +1,239 @@
+﻿using Microsoft.JSInterop;
+using pacc_system_test_one.Models;
+using Microsoft.JSInterop;
+
+namespace pacc_system_test_one.Services
+{
+    public class FirebaseAuthService
+    {
+        private readonly IJSRuntime _jsRuntime;
+
+        public AuthUser? CurrentUser { get; private set; }
+
+
+        public FirebaseAuthService(
+            IJSRuntime jsRuntime)
+        {
+            _jsRuntime = jsRuntime;
+        }
+
+
+        public bool IsAuthenticated =>
+            CurrentUser != null;
+
+
+        public bool IsAdmin =>
+            CurrentUser?.UserType
+                .Equals(
+                    "Admin",
+                    StringComparison.OrdinalIgnoreCase
+                ) == true;
+
+
+        // =====================================================
+        // Wait for Firebase
+        // =====================================================
+
+        private async Task WaitForFirebaseAsync()
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                try
+                {
+                    var ready =
+                        await _jsRuntime.InvokeAsync<bool>(
+                            "isFirebaseReady"
+                        );
+
+                    if (ready)
+                    {
+                        return;
+                    }
+                }
+                catch (JSException)
+                {
+                    // JavaScript has not loaded yet.
+                }
+
+                await Task.Delay(100);
+            }
+
+            throw new Exception(
+                "Firebase could not be initialized."
+            );
+        }
+
+
+        // =====================================================
+        // LOGIN
+        // =====================================================
+
+        public async Task<AuthUser?> LoginAsync(
+            string email,
+            string password)
+        {
+            await WaitForFirebaseAsync();
+
+
+            var result =
+                await _jsRuntime.InvokeAsync<AuthResult>(
+                    "firebaseAuth.login",
+                    email,
+                    password
+                );
+
+
+            if (!result.Success)
+            {
+                throw new Exception(
+                    result.Message ??
+                    "Login failed."
+                );
+            }
+
+
+            CurrentUser =
+                new AuthUser
+                {
+                    Uid =
+                        result.Uid ?? "",
+
+                    FirstName =
+                        result.FirstName ?? "",
+
+                    LastName =
+                        result.LastName ?? "",
+
+                    EmailAddress =
+                        result.EmailAddress ??
+                        email,
+
+                    UserType =
+                        result.UserType ??
+                        "User"
+                };
+
+
+            return CurrentUser;
+        }
+
+
+        // =====================================================
+        // REGISTER
+        // =====================================================
+
+        public async Task<AuthUser?> RegisterAsync(
+            string firstName,
+            string lastName,
+            string email,
+            string password)
+        {
+            await WaitForFirebaseAsync();
+
+
+            var result =
+                await _jsRuntime.InvokeAsync<AuthResult>(
+                    "firebaseAuth.register",
+                    email,
+                    password,
+                    firstName,
+                    lastName
+                );
+
+
+            if (!result.Success)
+            {
+                throw new Exception(
+                    result.Message ??
+                    "Registration failed."
+                );
+            }
+
+
+            CurrentUser =
+                new AuthUser
+                {
+                    Uid =
+                        result.Uid ?? "",
+
+                    FirstName =
+                        firstName,
+
+                    LastName =
+                        lastName,
+
+                    EmailAddress =
+                        email,
+
+                    UserType =
+                        "User"
+                };
+
+
+            return CurrentUser;
+        }
+
+
+        // =====================================================
+        // CURRENT USER
+        // =====================================================
+
+        public async Task<AuthUser?> LoadCurrentUserAsync()
+        {
+            await WaitForFirebaseAsync();
+
+
+            var result =
+                await _jsRuntime.InvokeAsync<AuthUser?>(
+                    "firebaseAuth.getCurrentUser"
+                );
+
+
+            CurrentUser =
+                result;
+
+
+            return CurrentUser;
+        }
+
+
+        // =====================================================
+        // LOGOUT
+        // =====================================================
+
+        public async Task LogoutAsync()
+        {
+            await WaitForFirebaseAsync();
+
+
+            await _jsRuntime.InvokeAsync<object>(
+                "firebaseAuth.logout"
+            );
+
+
+            CurrentUser = null;
+        }
+
+
+        // =====================================================
+        // Firebase result
+        // =====================================================
+
+        public class AuthResult
+        {
+            public bool Success { get; set; }
+
+            public string? Message { get; set; }
+
+            public string? Uid { get; set; }
+
+            public string? FirstName { get; set; }
+
+            public string? LastName { get; set; }
+
+            public string? EmailAddress { get; set; }
+
+            public string? UserType { get; set; }
+        }
+    }
+}

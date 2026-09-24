@@ -1,0 +1,42 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-layout">
+
+    <aside class="sidebar">
+        <NavMenu />
+    </aside>
+
+    <main class="main-content">
+
+        <div class="top-header">
+            <div class="header-spacer"></div>
+
+            <div class="header-actions">
+                <button class="header-search">
+                    <span>⌕</span>
+                    <span>Search...</span>
+                </button>
+
+                <button class="notification-button">
+                    🔔
+                    <span class="notification-badge">3</span>
+                </button>
+
+                <div class="user-header">
+                    <div class="user-avatar">
+                        P
+                    </div>
+
+                    <span>Palesa</span>
+                    <span class="dropdown-arrow">⌄</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="page-content">
+            @Body
+        </section>
+
+    </main>
+
+</div>
