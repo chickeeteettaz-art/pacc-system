@@ -1,5 +1,1638 @@
-﻿<h3>ManageAnnouncements</h3>
+﻿@page "/admin/announcements"
+
+@layout AdminLayout
+
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IJSRuntime JS
+
+<div class="announcements-page">
+
+    <!-- PAGE HEADER -->
+
+    <div class="page-header mb-4">
+
+        <div>
+
+            <div class="d-flex align-items-center gap-2 mb-2">
+
+                <span class="page-header-icon">
+                    <i class="bi bi-megaphone-fill"></i>
+                </span>
+
+                <span class="text-primary fw-semibold">
+                    Administration
+                </span>
+
+            </div>
+
+            <h1 class="page-title mb-1">
+                Announcements
+            </h1>
+
+            <p class="page-description mb-0">
+                Create and manage announcements for the Christian Centre.
+            </p>
+
+        </div>
+
+
+        <button class="btn btn-primary"
+                @onclick="OpenCreateForm">
+
+            <i class="bi bi-plus-lg me-2"></i>
+
+            New Announcement
+
+        </button>
+
+    </div>
+
+
+    <!-- ALERTS -->
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-start gap-3">
+
+            <i class="bi bi-exclamation-triangle-fill"></i>
+
+            <div class="flex-grow-1">
+
+                <strong>Unable to complete the request.</strong>
+
+                <div class="small mt-1">
+                    @errorMessage
+                </div>
+
+            </div>
+
+            <button class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success d-flex align-items-center gap-3">
+
+            <i class="bi bi-check-circle-fill"></i>
+
+            <div class="flex-grow-1">
+                @successMessage
+            </div>
+
+            <button class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- STATISTICS -->
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-md-4">
+
+            <div class="announcement-stat-card">
+
+                <div>
+
+                    <span>
+                        Total Announcements
+                    </span>
+
+                    <h2>
+                        @Announcements.Count
+                    </h2>
+
+                </div>
+
+                <div class="stat-icon">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-4">
+
+            <div class="announcement-stat-card">
+
+                <div>
+
+                    <span>
+                        Upcoming
+                    </span>
+
+                    <h2>
+                        @UpcomingCount
+                    </h2>
+
+                </div>
+
+                <div class="stat-icon upcoming">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-4">
+
+            <div class="announcement-stat-card">
+
+                <div>
+
+                    <span>
+                        Categories
+                    </span>
+
+                    <h2>
+                        @CategoryCount
+                    </h2>
+
+                </div>
+
+                <div class="stat-icon categories">
+                    <i class="bi bi-tags-fill"></i>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CREATE / EDIT FORM -->
+    @if (showForm)
+    {
+        <div class="card announcement-form-card mb-4">
+
+            <div class="card-header">
+
+                <div>
+
+                    <h5 class="mb-1 fw-bold">
+
+                        @if (editingAnnouncement)
+                        {
+                            <i class="bi bi-pencil-square me-2"></i>
+                            <span>Edit Announcement</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-plus-circle me-2"></i>
+                            <span>Create Announcement</span>
+                        }
+
+                    </h5>
+
+                    <small class="text-muted">
+                        @if (editingAnnouncement)
+                        {
+                            <span>Update the announcement details below.</span>
+                        }
+                        else
+                        {
+                            <span>Enter the details for the new announcement.</span>
+                        }
+                    </small>
+
+                </div>
+
+
+                <button class="btn-close"
+                        @onclick="CloseForm">
+                </button>
+
+            </div>
+
+
+            <div class="card-body">
+
+                <div class="row g-3">
+
+                    <!-- TITLE -->
+
+                    <div class="col-12">
+
+                        <label class="form-label">
+                            Title
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Announcement title"
+                               @bind="formTitle" />
+
+                    </div>
+
+
+                    <!-- CATEGORY -->
+
+                    <div class="col-12 col-md-6">
+
+                        <label class="form-label">
+                            Category
+                        </label>
+
+                        <select class="form-select"
+                                @bind="formCategory">
+
+                            <option value="General">
+                                General
+                            </option>
+
+                            <option value="Meetings">
+                                Meetings
+                            </option>
+
+                            <option value="Awareness Events">
+                                Awareness Events
+                            </option>
+
+                            <option value="Worship">
+                                Worship
+                            </option>
+
+                            <option value="Outreach">
+                                Outreach
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- DATE -->
+
+                    <div class="col-12 col-md-6">
+
+                        <label class="form-label">
+                            Announcement Date
+                        </label>
+
+                        <input type="datetime-local"
+                               class="form-control"
+                               @bind="formDate" />
+
+                    </div>
+
+
+                    <!-- LOCATION -->
+
+                    <div class="col-12">
+
+                        <label class="form-label">
+                            Location
+                        </label>
+
+                        <input type="text"
+                               class="form-control"
+                               placeholder="e.g. Main Church Auditorium"
+                               @bind="formLocation" />
+
+                    </div>
+
+
+                    <!-- DESCRIPTION -->
+
+                    <div class="col-12">
+
+                        <label class="form-label">
+                            Description
+                        </label>
+
+                        <textarea class="form-control"
+                                  rows="5"
+                                  placeholder="Write the announcement details..."
+                                  @bind="formDescription">
+                        </textarea>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="card-footer d-flex justify-content-end gap-2">
+
+                <button class="btn btn-light"
+                        @onclick="CloseForm"
+                        disabled="@saving">
+
+                    Cancel
+
+                </button>
+
+
+                <button class="btn btn-primary"
+                        @onclick="SaveAnnouncementAsync"
+                        disabled="@saving">
+
+                    @if (saving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-lg me-2"></i>
+
+                        <span>
+                            @(editingAnnouncement
+                                ? "Update Announcement"
+                                : "Create Announcement")
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+        </div>
+    }
+
+
+    <!-- SEARCH AND FILTER -->
+
+    <div class="card announcement-list-card">
+
+        <div class="announcement-toolbar">
+
+            <div>
+
+                <h5 class="fw-bold mb-1">
+                    All Announcements
+                </h5>
+
+                <small class="text-muted">
+                    @Announcements.Count announcement(s)
+                </small>
+
+            </div>
+
+
+            <div class="announcement-controls">
+
+                <div class="announcement-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Search announcements..."
+                           @bind="searchTerm"
+                           @bind:event="oninput" />
+
+                </div>
+
+
+                <select class="form-select"
+                        @bind="selectedCategory">
+
+                    <option value="All">
+                        All Categories
+                    </option>
+
+                    <option value="General">
+                        General
+                    </option>
+
+                    <option value="Meetings">
+                        Meetings
+                    </option>
+
+                    <option value="Awareness Events">
+                        Awareness Events
+                    </option>
+
+                    <option value="Worship">
+                        Worship
+                    </option>
+
+                    <option value="Outreach">
+                        Outreach
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        @if (loading)
+        {
+            <div class="loading-state">
+
+                <div class="spinner-border text-primary"></div>
+
+                <h5 class="mt-3">
+                    Loading announcements...
+                </h5>
+
+            </div>
+        }
+        else if (!FilteredAnnouncements.Any())
+        {
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    <i class="bi bi-megaphone"></i>
+                </div>
+
+                <h5>
+                    No announcements found
+                </h5>
+
+                <p class="text-muted">
+                    Create your first announcement or change your filters.
+                </p>
+
+                <button class="btn btn-primary"
+                        @onclick="OpenCreateForm">
+
+                    <i class="bi bi-plus-lg me-2"></i>
+
+                    Create Announcement
+
+                </button>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+
+                <table class="table announcement-table align-middle mb-0">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Announcement
+                            </th>
+
+                            <th>
+                                Category
+                            </th>
+
+                            <th>
+                                Date
+                            </th>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th class="text-end">
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (var announcement in FilteredAnnouncements)
+                        {
+                            <tr>
+
+                                <!-- TITLE -->
+
+                                <td>
+
+                                    <div class="announcement-title">
+
+                                        <div class="announcement-icon">
+
+                                            <i class="bi bi-megaphone-fill"></i>
+
+                                        </div>
+
+                                        <div>
+
+                                            <strong>
+                                                @announcement.Title
+                                            </strong>
+
+                                            <small>
+                                                @GetShortDescription(
+                                                    announcement.Description)
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- CATEGORY -->
+
+                                <td>
+
+                                    <span class="category-badge">
+
+                                        @announcement.Category
+
+                                    </span>
+
+                                </td>
+
+
+                                <!-- DATE -->
+
+                                <td>
+
+                                    <div class="date-cell">
+
+                                        <i class="bi bi-calendar3"></i>
+
+                                        <div>
+
+                                            <strong>
+                                                @announcement.AnnouncementDate.ToString("dd MMM yyyy")
+                                            </strong>
+
+                                            <small>
+                                                @announcement.AnnouncementDate.ToString("HH:mm")
+                                            </small>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- LOCATION -->
+
+                                <td>
+
+                                    @if (string.IsNullOrWhiteSpace(
+                                        announcement.Location))
+                                    {
+                                        <span class="text-muted">
+                                            Not specified
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="location-cell">
+
+                                            <i class="bi bi-geo-alt"></i>
+
+                                            @announcement.Location
+
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <!-- ACTIONS -->
+
+                                <td class="text-end">
+
+                                    <div class="dropdown">
+
+                                        <button class="btn btn-light action-button dropdown-toggle"
+                                                type="button"
+                                                data-bs-toggle="dropdown">
+
+                                            <i class="bi bi-three-dots"></i>
+
+                                        </button>
+
+
+                                        <ul class="dropdown-menu dropdown-menu-end">
+
+                                            <li>
+
+                                                <button class="dropdown-item"
+                                                        @onclick="() => ViewAnnouncement(announcement)">
+
+                                                    <i class="bi bi-eye me-2"></i>
+
+                                                    View
+
+                                                </button>
+
+                                            </li>
+
+
+                                            <li>
+
+                                                <button class="dropdown-item"
+                                                        @onclick="() => EditAnnouncement(announcement)">
+
+                                                    <i class="bi bi-pencil me-2"></i>
+
+                                                    Edit
+
+                                                </button>
+
+                                            </li>
+
+
+                                            <li>
+                                                <hr class="dropdown-divider" />
+                                            </li>
+
+
+                                            <li>
+
+                                                <button class="dropdown-item text-danger"
+                                                        @onclick="() => DeleteAnnouncementAsync(announcement)">
+
+                                                    <i class="bi bi-trash3 me-2"></i>
+
+                                                    Delete
+
+                                                </button>
+
+                                            </li>
+
+                                        </ul>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- VIEW ANNOUNCEMENT -->
+    @if (selectedAnnouncement != null)
+    {
+        <div class="announcement-overlay"
+             @onclick="CloseAnnouncementViewer">
+
+            <div class="announcement-viewer"
+                 @onclick:stopPropagation="true">
+
+                <div class="viewer-header">
+
+                    <div>
+
+                        <span class="category-badge">
+                            @selectedAnnouncement.Category
+                        </span>
+
+                        <h3 class="mt-3 mb-0">
+                            @selectedAnnouncement.Title
+                        </h3>
+
+                    </div>
+
+                    <button class="btn-close"
+                            @onclick="CloseAnnouncementViewer">
+                    </button>
+
+                </div>
+
+
+                <div class="viewer-body">
+
+                    <div class="viewer-info">
+
+                        <div>
+
+                            <i class="bi bi-calendar3"></i>
+
+                            <div>
+
+                                <small>
+                                    Date
+                                </small>
+
+                                <strong>
+                                    @selectedAnnouncement.AnnouncementDate.ToString("dd MMMM yyyy")
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div>
+
+                            <i class="bi bi-clock"></i>
+
+                            <div>
+
+                                <small>
+                                    Time
+                                </small>
+
+                                <strong>
+                                    @selectedAnnouncement.AnnouncementDate.ToString("HH:mm")
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div>
+
+                            <i class="bi bi-geo-alt"></i>
+
+                            <div>
+
+                                <small>
+                                    Location
+                                </small>
+
+                                <strong>
+                                    @(string.IsNullOrWhiteSpace(
+                                        selectedAnnouncement.Location)
+                                        ? "Not specified"
+                                        : selectedAnnouncement.Location)
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="viewer-description">
+
+                        <h6>
+                            Description
+                        </h6>
+
+                        <p>
+                            @selectedAnnouncement.Description
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="viewer-footer">
+
+                    <button class="btn btn-light"
+                            @onclick="CloseAnnouncementViewer">
+
+                        Close
+
+                    </button>
+
+
+                    <button class="btn btn-primary"
+                            @onclick="() => EditAnnouncement(selectedAnnouncement)">
+
+                        <i class="bi bi-pencil me-2"></i>
+
+                        Edit Announcement
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+<style>
+
+    .announcements-page {
+        width: 100%;
+    }
+
+
+    .page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+
+    .page-header-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+    .page-title {
+        color: #0f172a;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+
+    .page-description {
+        color: #64748b;
+    }
+
+
+    .announcement-stat-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        min-height: 125px;
+    }
+
+
+        .announcement-stat-card span {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .announcement-stat-card h2 {
+            margin: 8px 0 0;
+            color: #0f172a;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 20px;
+    }
+
+
+        .stat-icon.upcoming {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+
+        .stat-icon.categories {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+
+    .announcement-form-card,
+    .announcement-list-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+
+        .announcement-form-card .card-header {
+            background: white;
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+
+        .announcement-form-card .card-footer {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+
+    .announcement-toolbar {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+
+    .announcement-controls {
+        display: flex;
+        gap: 12px;
+    }
+
+
+    .announcement-search {
+        width: 280px;
+        position: relative;
+    }
+
+
+        .announcement-search i {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            z-index: 2;
+        }
+
+
+        .announcement-search input {
+            padding-left: 38px;
+        }
+
+
+    .announcement-controls select {
+        width: 180px;
+    }
+
+
+    .announcement-table {
+        min-width: 950px;
+    }
+
+
+        .announcement-table thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 14px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+
+        .announcement-table tbody td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+
+        .announcement-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+
+    .announcement-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+
+    .announcement-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+    .announcement-title strong {
+        display: block;
+        color: #0f172a;
+        margin-bottom: 3px;
+    }
+
+
+    .announcement-title small {
+        display: block;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #64748b;
+    }
+
+
+    .category-badge {
+        display: inline-flex;
+        padding: 6px 10px;
+        border-radius: 20px;
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+
+    .date-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+
+        .date-cell > i {
+            color: #2563eb;
+        }
+
+
+        .date-cell strong,
+        .date-cell small {
+            display: block;
+        }
+
+
+        .date-cell strong {
+            font-size: 13px;
+            color: #334155;
+        }
+
+
+        .date-cell small {
+            color: #94a3b8;
+        }
+
+
+    .location-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+
+        .location-cell i {
+            color: #94a3b8;
+        }
+
+
+    .action-button {
+        border: 1px solid #e2e8f0;
+        background: white;
+    }
+
+
+    .loading-state,
+    .empty-state {
+        text-align: center;
+        padding: 70px 20px;
+    }
+
+
+    .empty-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+    }
+
+
+    /* VIEWER */
+
+    .announcement-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(15, 23, 42, .55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+
+    .announcement-viewer {
+        width: 100%;
+        max-width: 700px;
+        max-height: 90vh;
+        overflow: auto;
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, .2);
+    }
+
+
+    .viewer-header {
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+
+        .viewer-header h3 {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+
+    .viewer-body {
+        padding: 24px;
+    }
+
+
+    .viewer-info {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+
+        .viewer-info > div {
+            display: flex;
+            gap: 10px;
+            padding: 14px;
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+
+
+        .viewer-info i {
+            color: #2563eb;
+            font-size: 18px;
+        }
+
+
+        .viewer-info small,
+        .viewer-info strong {
+            display: block;
+        }
+
+
+        .viewer-info small {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+
+        .viewer-info strong {
+            color: #334155;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+
+
+    .viewer-description h6 {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+
+    .viewer-description p {
+        color: #475569;
+        line-height: 1.7;
+        white-space: pre-line;
+    }
+
+
+    .viewer-footer {
+        padding: 16px 24px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+
+    @@media (max-width: 767px) {
+
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .page-header .btn {
+                width: 100%;
+            }
+
+        .announcement-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .announcement-controls {
+            flex-direction: column;
+        }
+
+            .announcement-search,
+            .announcement-controls select {
+                width: 100%;
+            }
+
+        .viewer-info {
+            grid-template-columns: 1fr;
+        }
+
+        .viewer-footer {
+            flex-direction: column;
+        }
+
+            .viewer-footer button {
+                width: 100%;
+            }
+    }
+
+</style>
+
 
 @code {
+
+    private List<Announcement> Announcements { get; set; } = new();
+
+    private string searchTerm = string.Empty;
+
+    private string selectedCategory = "All";
+
+    private bool loading = true;
+
+    private bool saving = false;
+
+    private bool showForm = false;
+
+    private bool editingAnnouncement = false;
+
+    private string errorMessage = string.Empty;
+
+    private string successMessage = string.Empty;
+
+
+    private Announcement? selectedAnnouncement;
+
+
+    private string formAnnouncementId = string.Empty;
+
+    private string formTitle = string.Empty;
+
+    private string formDescription = string.Empty;
+
+    private string formLocation = string.Empty;
+
+    private string formCategory = "General";
+
+    private DateTime formDate = DateTime.Now;
+
+
+    private IEnumerable<Announcement> FilteredAnnouncements =>
+        Announcements
+            .Where(a =>
+                string.IsNullOrWhiteSpace(searchTerm)
+                ||
+                a.Title.Contains(
+                    searchTerm,
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                a.Description.Contains(
+                    searchTerm,
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                a.Location.Contains(
+                    searchTerm,
+                    StringComparison.OrdinalIgnoreCase)
+            )
+            .Where(a =>
+                selectedCategory == "All"
+                ||
+                a.Category.Equals(
+                    selectedCategory,
+                    StringComparison.OrdinalIgnoreCase)
+            )
+            .OrderByDescending(
+                a => a.AnnouncementDate);
+
+
+    private int UpcomingCount =>
+        Announcements.Count(
+            a => a.AnnouncementDate >= DateTime.Now);
+
+
+    private int CategoryCount =>
+        Announcements
+            .Select(a => a.Category)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnnouncementsAsync();
+    }
+
+
+    private async Task LoadAnnouncementsAsync()
+    {
+        loading = true;
+
+        errorMessage = string.Empty;
+
+        try
+        {
+            Announcements =
+                await AuthService.GetAnnouncementsAsync();
+
+            Announcements ??= new List<Announcement>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = GetFriendlyErrorMessage(ex);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+
+    private void OpenCreateForm()
+    {
+        ClearMessages();
+
+        editingAnnouncement = false;
+
+        formAnnouncementId = string.Empty;
+
+        formTitle = string.Empty;
+
+        formDescription = string.Empty;
+
+        formLocation = string.Empty;
+
+        formCategory = "General";
+
+        formDate = DateTime.Now;
+
+        showForm = true;
+
+        selectedAnnouncement = null;
+    }
+
+
+    private void EditAnnouncement(
+        Announcement announcement)
+    {
+        ClearMessages();
+
+        editingAnnouncement = true;
+
+        formAnnouncementId =
+            announcement.AnnouncementId;
+
+        formTitle =
+            announcement.Title;
+
+        formDescription =
+            announcement.Description;
+
+        formLocation =
+            announcement.Location;
+
+        formCategory =
+            announcement.Category;
+
+        formDate =
+            announcement.AnnouncementDate;
+
+        showForm = true;
+
+        selectedAnnouncement = null;
+    }
+
+
+    private async Task SaveAnnouncementAsync()
+    {
+        ClearMessages();
+
+        if (string.IsNullOrWhiteSpace(formTitle))
+        {
+            errorMessage =
+                "Please enter an announcement title.";
+
+            return;
+        }
+
+
+        if (string.IsNullOrWhiteSpace(formDescription))
+        {
+            errorMessage =
+                "Please enter an announcement description.";
+
+            return;
+        }
+
+
+        if (string.IsNullOrWhiteSpace(formCategory))
+        {
+            errorMessage =
+                "Please select an announcement category.";
+
+            return;
+        }
+
+
+        saving = true;
+
+        try
+        {
+            if (editingAnnouncement)
+            {
+                await AuthService.UpdateAnnouncementAsync(
+                    formAnnouncementId,
+                    formTitle.Trim(),
+                    formDescription.Trim(),
+                    formDate,
+                    formLocation.Trim(),
+                    formCategory);
+
+                successMessage =
+                    "Announcement updated successfully.";
+            }
+            else
+            {
+                await AuthService.CreateAnnouncementAsync(
+                    formTitle.Trim(),
+                    formDescription.Trim(),
+                    formDate,
+                    formLocation.Trim(),
+                    formCategory);
+
+                successMessage =
+                    "Announcement created successfully.";
+            }
+
+
+            showForm = false;
+
+            await LoadAnnouncementsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                GetFriendlyErrorMessage(ex);
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+
+    private async Task DeleteAnnouncementAsync(
+        Announcement announcement)
+    {
+        ClearMessages();
+
+        var confirmed =
+            await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Are you sure you want to delete \"{announcement.Title}\"?");
+
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+
+        try
+        {
+            await AuthService.DeleteAnnouncementAsync(
+                announcement.AnnouncementId);
+
+            Announcements.Remove(
+                announcement);
+
+            successMessage =
+                "Announcement deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                GetFriendlyErrorMessage(ex);
+        }
+    }
+
+
+    private void ViewAnnouncement(
+        Announcement announcement)
+    {
+        selectedAnnouncement =
+            announcement;
+
+        showForm = false;
+
+        ClearMessages();
+    }
+
+
+    private void CloseAnnouncementViewer()
+    {
+        selectedAnnouncement = null;
+    }
+
+
+    private void CloseForm()
+    {
+        showForm = false;
+
+        editingAnnouncement = false;
+    }
+
+
+    private string GetShortDescription(
+        string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return "No description";
+        }
+
+        if (description.Length <= 80)
+        {
+            return description;
+        }
+
+        return $"{description[..80]}...";
+    }
+
+
+    private void ClearMessages()
+    {
+        errorMessage = string.Empty;
+
+        successMessage = string.Empty;
+    }
+
+
+    private string GetFriendlyErrorMessage(
+        Exception ex)
+    {
+        var message = ex.Message;
+
+        if (message.Contains(
+            "Missing or insufficient permissions",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Firebase denied this operation. Make sure you are logged in as an administrator and that your Firestore Security Rules allow administrators to manage announcements.";
+        }
+
+        if (message.Contains(
+            "You must be logged in",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Your Firebase session has expired. Please log in again.";
+        }
+
+        return message;
+    }
 
 }

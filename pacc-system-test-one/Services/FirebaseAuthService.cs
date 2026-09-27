@@ -266,6 +266,108 @@ namespace pacc_system_test_one.Services
             }
         }
 
+        public async Task<List<Announcement>> GetAnnouncementsAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var announcements =
+                    await _jsRuntime.InvokeAsync<List<Announcement>>(
+                        "firebaseAuth.getAnnouncements");
+
+                return announcements ?? new List<Announcement>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getAnnouncements error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task CreateAnnouncementAsync(
+            string title,
+            string description,
+            DateTime announcementDate,
+            string location,
+            string category)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.createAnnouncement",
+                    title,
+                    description,
+                    announcementDate,
+                    location,
+                    category);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase createAnnouncement error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task UpdateAnnouncementAsync(
+            string announcementId,
+            string title,
+            string description,
+            DateTime announcementDate,
+            string location,
+            string category)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateAnnouncement",
+                    announcementId,
+                    title,
+                    description,
+                    announcementDate,
+                    location,
+                    category);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updateAnnouncement error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task DeleteAnnouncementAsync(
+            string announcementId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteAnnouncement",
+                    announcementId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteAnnouncement error: {ex.Message}");
+
+                throw;
+            }
+        }
+
 
         // =====================================================
         // DELETE USER PROFILE
@@ -331,4 +433,6 @@ namespace pacc_system_test_one.Services
             public string? UserType { get; set; }
         }
     }
+
+
 }
