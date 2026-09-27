@@ -77,9 +77,12 @@
 
                 import {
                     getFirestore,
+                    collection,
+                    getDocs,
+                    getDoc,
                     doc,
-                    setDoc,
-                    getDoc
+                    updateDoc,
+                    deleteDoc
                 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
@@ -421,18 +424,13 @@
                             }
                             catch (error) {
 
-                                console.error(
-                                    "Firebase login error:",
-                                    error
-                                );
-
+                                console.error("Firebase login error:",error);
 
                                 return {
 
                                     success: false,
 
-                                    message:
-                                        error.message
+                                    message: error.message
                                 };
                             }
                         },
@@ -556,8 +554,83 @@
 
                         };
 
-                }
+};
 
+window.firebaseAuth.getUsers = async function () {
+
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot = await getDocs(
+        collection(db, "users")
+    );
+
+    const users = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data = documentSnapshot.data();
+
+        users.push({
+            userId: documentSnapshot.id,
+            firebaseUid: data.firebaseUid || documentSnapshot.id,
+            firstName: data.firstName || "",
+            lastName: data.lastName || "",
+            emailAddress: data.emailAddress || "",
+            userType: data.userType || "User"
+        });
+
+    });
+
+    return users;
+};
+
+
+window.firebaseAuth.updateUserRole = async function (
+    userId,
+    userType
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (
+        userType !== "User" &&
+        userType !== "Admin"
+    ) {
+        throw new Error("Invalid user type.");
+    }
+
+    await updateDoc(
+        doc(db, "users", userId),
+        {
+            userType: userType
+        }
+    );
+
+    return true;
+};
+
+
+window.firebaseAuth.deleteUserProfile = async function (
+    userId
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    await deleteDoc(
+        doc(db, "users", userId)
+    );
+
+    return true;
+};
+        
     </script>
 
 

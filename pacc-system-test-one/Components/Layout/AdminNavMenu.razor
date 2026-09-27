@@ -1,5 +1,191 @@
-﻿<h3>AdminNavMenu</h3>
+﻿<div class="sidebar-content">
 
-@code {
+    <!-- BRAND -->
 
-}
+    <div class="brand-section">
+
+        <a href="/admin/dashboard" class="brand-link">
+
+            <div class="brand-logo">
+                <i class="bi bi-stars"></i>
+            </div>
+
+            <div class="brand-text">
+
+                <div class="brand-title">
+                    CHRISTIAN
+                    <br />
+                    CENTRE
+                </div>
+
+                <div class="brand-subtitle">
+                    ADMINISTRATION
+                </div>
+
+            </div>
+
+        </a>
+
+    </div>
+
+
+    <!-- NAVIGATION -->
+
+    <nav class="navigation-section">
+
+        <div class="navigation-label">
+            MAIN
+        </div>
+
+
+        <!-- Dashboard -->
+
+        <NavLink href="/admin/dashboard"
+                 Match="NavLinkMatch.All"
+                 class="nav-item">
+
+            <i class="bi bi-grid-1x2-fill nav-icon"></i>
+
+            <span>Dashboard</span>
+
+        </NavLink>
+
+
+        <div class="navigation-label mt-4">
+            MANAGEMENT
+        </div>
+
+
+        <!-- Users -->
+
+        <NavLink href="/admin/users"
+                 class="nav-item">
+
+            <i class="bi bi-people nav-icon"></i>
+
+            <span>Users</span>
+
+        </NavLink>
+
+
+        <!-- Announcements -->
+
+        <NavLink href="/admin/announcements"
+                 class="nav-item">
+
+            <i class="bi bi-megaphone nav-icon"></i>
+
+            <span>Announcements</span>
+
+        </NavLink>
+
+
+        <!-- Donations -->
+
+        <NavLink href="/admin/donations"
+                 class="nav-item">
+
+            <i class="bi bi-wallet2 nav-icon"></i>
+
+            <span>Donations</span>
+
+        </NavLink>
+
+
+        <!-- Gallery -->
+
+        <NavLink href="/admin/gallery"
+                 class="nav-item">
+
+            <i class="bi bi-images nav-icon"></i>
+
+            <span>Gallery</span>
+
+        </NavLink>
+
+
+        <!-- Messages -->
+
+        <NavLink href="/admin/messages"
+                 class="nav-item">
+
+            <i class="bi bi-chat-dots nav-icon"></i>
+
+            <span>Messages</span>
+
+        </NavLink>
+
+
+        <!-- Outreach -->
+
+        <NavLink href="/admin/outreach"
+                 class="nav-item">
+
+            <i class="bi bi-people-fill nav-icon"></i>
+
+            <span>Outreach</span>
+
+        </NavLink>
+
+
+        <!-- Prayer Requests -->
+
+        <NavLink href="/admin/prayer-requests"
+                 class="nav-item">
+
+            <i class="bi bi-heart nav-icon"></i>
+
+            <span>Prayer Requests</span>
+
+        </NavLink>
+
+
+        <!-- Sermons -->
+
+        <NavLink href="/admin/sermons"
+                 class="nav-item">
+
+            <i class="bi bi-play-circle nav-icon"></i>
+
+            <span>Sermons</span>
+
+        </NavLink>
+
+    </nav>
+
+
+    <!-- SIDEBAR FOOTER -->
+
+    <div class="sidebar-bottom">
+
+        <div class="motto-card">
+
+            <div class="motto-icon">
+                <i class="bi bi-shield-check"></i>
+            </div>
+
+            <div class="motto-text">
+
+                <strong>Administration</strong>
+
+                <br />
+
+                Manage the Christian Centre
+
+            </div>
+
+        </div>
+
+
+        <NavLink href="/login"
+                 class="nav-item logout-link">
+
+            <i class="bi bi-box-arrow-right nav-icon"></i>
+
+            <span>Logout</span>
+
+        </NavLink>
+
+    </div>
+
+</div>

@@ -1,6 +1,5 @@
 ﻿using Microsoft.JSInterop;
 using pacc_system_test_one.Models;
-using Microsoft.JSInterop;
 
 namespace pacc_system_test_one.Services
 {
@@ -10,28 +9,23 @@ namespace pacc_system_test_one.Services
 
         public AuthUser? CurrentUser { get; private set; }
 
-
-        public FirebaseAuthService(
-            IJSRuntime jsRuntime)
+        public FirebaseAuthService(IJSRuntime jsRuntime)
         {
             _jsRuntime = jsRuntime;
         }
 
-
         public bool IsAuthenticated =>
             CurrentUser != null;
 
-
         public bool IsAdmin =>
-            CurrentUser?.UserType
-                .Equals(
-                    "Admin",
-                    StringComparison.OrdinalIgnoreCase
-                ) == true;
+            CurrentUser?.UserType.Equals(
+                "Admin",
+                StringComparison.OrdinalIgnoreCase
+            ) == true;
 
 
         // =====================================================
-        // Wait for Firebase
+        // WAIT FOR FIREBASE
         // =====================================================
 
         private async Task WaitForFirebaseAsync()
@@ -52,7 +46,7 @@ namespace pacc_system_test_one.Services
                 }
                 catch (JSException)
                 {
-                    // JavaScript has not loaded yet.
+                    // Firebase is still loading.
                 }
 
                 await Task.Delay(100);
@@ -74,14 +68,12 @@ namespace pacc_system_test_one.Services
         {
             await WaitForFirebaseAsync();
 
-
             var result =
                 await _jsRuntime.InvokeAsync<AuthResult>(
                     "firebaseAuth.login",
                     email,
                     password
                 );
-
 
             if (!result.Success)
             {
@@ -91,28 +83,22 @@ namespace pacc_system_test_one.Services
                 );
             }
 
+            CurrentUser = new AuthUser
+            {
+                Uid = result.Uid ?? "",
 
-            CurrentUser =
-                new AuthUser
-                {
-                    Uid =
-                        result.Uid ?? "",
+                FirstName =
+                    result.FirstName ?? "",
 
-                    FirstName =
-                        result.FirstName ?? "",
+                LastName =
+                    result.LastName ?? "",
 
-                    LastName =
-                        result.LastName ?? "",
+                EmailAddress =
+                    result.EmailAddress ?? email,
 
-                    EmailAddress =
-                        result.EmailAddress ??
-                        email,
-
-                    UserType =
-                        result.UserType ??
-                        "User"
-                };
-
+                UserType =
+                    result.UserType ?? "User"
+            };
 
             return CurrentUser;
         }
@@ -130,7 +116,6 @@ namespace pacc_system_test_one.Services
         {
             await WaitForFirebaseAsync();
 
-
             var result =
                 await _jsRuntime.InvokeAsync<AuthResult>(
                     "firebaseAuth.register",
@@ -140,7 +125,6 @@ namespace pacc_system_test_one.Services
                     lastName
                 );
 
-
             if (!result.Success)
             {
                 throw new Exception(
@@ -149,26 +133,18 @@ namespace pacc_system_test_one.Services
                 );
             }
 
+            CurrentUser = new AuthUser
+            {
+                Uid = result.Uid ?? "",
 
-            CurrentUser =
-                new AuthUser
-                {
-                    Uid =
-                        result.Uid ?? "",
+                FirstName = firstName,
 
-                    FirstName =
-                        firstName,
+                LastName = lastName,
 
-                    LastName =
-                        lastName,
+                EmailAddress = email,
 
-                    EmailAddress =
-                        email,
-
-                    UserType =
-                        "User"
-                };
-
+                UserType = "User"
+            };
 
             return CurrentUser;
         }
@@ -203,22 +179,29 @@ namespace pacc_system_test_one.Services
                 return null;
             }
         }
+
+
+        // =====================================================
+        // DISPLAY NAME
+        // =====================================================
+
         public string GetDisplayName(string email)
         {
             var username = email.Split('@')[0];
 
             if (string.IsNullOrWhiteSpace(username))
+            {
                 return "User";
+            }
 
             username = username
                 .Replace(".", " ")
                 .Replace("_", " ")
                 .Replace("-", " ");
 
-            var parts = username
-                .Split(
-                    ' ',
-                    StringSplitOptions.RemoveEmptyEntries);
+            var parts = username.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
 
             return string.Join(
                 " ",
@@ -226,6 +209,90 @@ namespace pacc_system_test_one.Services
                     char.ToUpper(part[0]) +
                     part.Substring(1).ToLower()));
         }
+
+
+        // =====================================================
+        // GET ALL USERS
+        // =====================================================
+
+        public async Task<List<User>> GetUsersAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var users =
+                    await _jsRuntime.InvokeAsync<List<User>>(
+                        "firebaseAuth.getUsers");
+
+                return users ?? new List<User>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getUsers error: {ex.Message}"
+                );
+
+                throw;
+            }
+        }
+
+
+        // =====================================================
+        // UPDATE USER ROLE
+        // =====================================================
+
+        public async Task UpdateUserRoleAsync(
+            string userId,
+            string userType)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateUserRole",
+                    userId,
+                    userType
+                );
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updateUserRole error: {ex.Message}"
+                );
+
+                throw;
+            }
+        }
+
+
+        // =====================================================
+        // DELETE USER PROFILE
+        // =====================================================
+
+        public async Task DeleteUserProfileAsync(
+            string userId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteUserProfile",
+                    userId
+                );
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteUserProfile error: {ex.Message}"
+                );
+
+                throw;
+            }
+        }
+
 
         // =====================================================
         // LOGOUT
@@ -235,18 +302,16 @@ namespace pacc_system_test_one.Services
         {
             await WaitForFirebaseAsync();
 
-
             await _jsRuntime.InvokeAsync<object>(
                 "firebaseAuth.logout"
             );
-
 
             CurrentUser = null;
         }
 
 
         // =====================================================
-        // Firebase result
+        // FIREBASE RESULT
         // =====================================================
 
         public class AuthResult
