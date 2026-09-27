@@ -80,9 +80,10 @@
                     collection,
                     getDocs,
                     getDoc,
-                    doc,
+                    addDoc,
                     updateDoc,
-                    deleteDoc
+                    deleteDoc,
+                    doc
                 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
@@ -630,7 +631,158 @@ window.firebaseAuth.deleteUserProfile = async function (
 
     return true;
 };
-        
+        /*
+            this is the Announcements section
+        */
+
+// ============================================================
+// ANNOUNCEMENTS
+// ============================================================
+
+window.firebaseAuth.getAnnouncements = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot = await getDocs(
+        collection(db, "announcements")
+    );
+
+    const announcements = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data = documentSnapshot.data();
+
+        announcements.push({
+            announcementId: documentSnapshot.id,
+
+            title: data.title || "",
+
+            description: data.description || "",
+
+            announcementDate:
+                data.announcementDate || new Date().toISOString(),
+
+            location:
+                data.location || "",
+
+            category:
+                data.category || "General",
+
+            createdAt:
+                data.createdAt || new Date().toISOString(),
+
+            updatedAt:
+                data.updatedAt || new Date().toISOString()
+        });
+    });
+
+    announcements.sort((a, b) =>
+        new Date(b.announcementDate) -
+        new Date(a.announcementDate)
+    );
+
+    return announcements;
+};
+
+
+window.firebaseAuth.createAnnouncement = async function (
+    title,
+    description,
+    announcementDate,
+    location,
+    category
+) {
+
+    console.log("createAnnouncement called");
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const now = new Date().toISOString();
+
+    await addDoc(
+        collection(db, "announcements"),
+        {
+            title: title || "",
+            description: description || "",
+            announcementDate:
+                new Date(announcementDate).toISOString(),
+            location: location || "",
+            category: category || "General",
+            createdAt: now,
+            updatedAt: now
+        }
+    );
+
+    return true;
+};
+
+
+window.firebaseAuth.updateAnnouncement = async function (
+    announcementId,
+    title,
+    description,
+    announcementDate,
+    location,
+    category
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!announcementId) {
+        throw new Error("Announcement ID is required.");
+    }
+
+    await updateDoc(
+        doc(
+            db,
+            "announcements",
+            announcementId
+        ),
+        {
+            title: title || "",
+            description: description || "",
+            announcementDate:
+                new Date(announcementDate).toISOString(),
+            location: location || "",
+            category: category || "General",
+            updatedAt:
+                new Date().toISOString()
+        }
+    );
+
+    return true;
+};
+
+
+window.firebaseAuth.deleteAnnouncement = async function (
+    announcementId
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!announcementId) {
+        throw new Error("Announcement ID is required.");
+    }
+
+    await deleteDoc(
+        doc(
+            db,
+            "announcements",
+            announcementId
+        )
+    );
+
+    return true;
+};
     </script>
 
 

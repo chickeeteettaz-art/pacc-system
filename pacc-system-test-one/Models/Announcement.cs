@@ -6,14 +6,20 @@ namespace pacc_system_test_one.Models
 {
     public class Announcement
     {
-        public int AnnouncementId { get; set; }
+        public string AnnouncementId { get; set; } = string.Empty;
 
-        public string Title { get; set; } = "";
+        public string Title { get; set; } = string.Empty;
 
-        public string Description { get; set; } = "";
+        public string Description { get; set; } = string.Empty;
 
-        public string Location { get; set; } = "";
+        public DateTime AnnouncementDate { get; set; } = DateTime.Now;
 
-        public DateTime Date { get; set; }
+        public string Location { get; set; } = string.Empty;
+
+        public string Category { get; set; } = "General";
+
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
     }
 }
