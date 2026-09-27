@@ -1,5 +1,125 @@
-﻿<h3>AdminLayout</h3>
+﻿@inherits LayoutComponentBase
 
-@code {
+<div class="app-shell">
 
-}
+    <!-- =========================
+         ADMIN SIDEBAR
+         ========================= -->
+
+    <aside class="sidebar">
+        <AdminNavMenu />
+    </aside>
+
+
+    <!-- =========================
+         MAIN AREA
+         ========================= -->
+
+    <div class="main-area">
+
+        <!-- =========================
+             ADMIN HEADER
+             ========================= -->
+
+        <header class="admin-header">
+
+            <!-- LEFT SIDE -->
+
+            <div class="admin-header-left">
+
+                <div class="admin-header-icon">
+                    <i class="bi bi-speedometer2"></i>
+                </div>
+
+                <div class="admin-header-title">
+
+                    <h5>
+                        Administration
+                    </h5>
+
+                    <span>
+                        Christian Centre Management
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- RIGHT SIDE -->
+
+            <div class="admin-header-right">
+
+                <!-- Search -->
+
+                <button class="admin-header-button"
+                        type="button"
+                        title="Search">
+
+                    <i class="bi bi-search"></i>
+
+                </button>
+
+
+                <!-- Notifications -->
+
+                <button class="admin-header-button notification-button"
+                        type="button"
+                        title="Notifications">
+
+                    <i class="bi bi-bell"></i>
+
+                    <span class="notification-badge">
+                        3
+                    </span>
+
+                </button>
+
+
+                <!-- Divider -->
+
+                <div class="admin-header-divider"></div>
+
+
+                <!-- Admin Profile -->
+
+                <div class="admin-profile">
+
+                    <div class="admin-avatar">
+                        A
+                    </div>
+
+                    <div class="admin-profile-details">
+
+                        <strong>
+                            Administrator
+                        </strong>
+
+                        <span>
+                            Administrator
+                        </span>
+
+                    </div>
+
+                    <i class="bi bi-chevron-down admin-profile-arrow"></i>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =========================
+             PAGE CONTENT
+             ========================= -->
+
+        <main class="page-content">
+
+            @Body
+
+        </main>
+
+    </div>
+
+</div>

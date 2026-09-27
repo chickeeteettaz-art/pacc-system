@@ -1,124 +1,179 @@
-﻿<div class="nav-container">
+﻿<div class="sidebar-content">
 
-    <div class="brand">
+    <!-- Brand -->
+    <div class="brand-section">
 
-        <div class="brand-logo">
-            ✝
-        </div>
+        <a href="/dashboard"
+           class="text-decoration-none brand-link">
 
-        <div class="brand-text">
-            <div class="brand-title">
-                CHRISTIAN
-                <br />
-                CENTRE
+            <div class="brand-logo">
+
+                <i class="bi bi-cross"></i>
+
             </div>
 
-            <div class="brand-subtitle">
-                A PLACE OF HOPE, FAITH & FAMILY
+            <div>
+
+                <div class="brand-title">
+                    CHRISTIAN
+                    <br />
+                    CENTRE
+                </div>
+
+                <div class="brand-subtitle">
+                    A PLACE OF HOPE, FAITH & FAMILY
+                </div>
+
             </div>
-        </div>
+
+        </a>
 
     </div>
 
-    <nav class="navigation">
 
-        <NavLink href="/dashboard"
-                 Match="NavLinkMatch.All"
-                 class="nav-item">
+    <!-- Navigation -->
+    <div class="navigation-section">
 
-            <span class="nav-icon">⌂</span>
-            <span>Dashboard</span>
-
-        </NavLink>
-
-        <NavLink href="/sermons"
-                 class="nav-item">
-
-            <span class="nav-icon">▶</span>
-            <span>Sermons</span>
-
-        </NavLink>
-
-        <NavLink href="/services"
-                 class="nav-item">
-
-            <span class="nav-icon">▣</span>
-            <span>Services</span>
-
-        </NavLink>
-
-        <NavLink href="/prayer-request"
-                 class="nav-item">
-
-            <span class="nav-icon">♧</span>
-            <span>Prayer Request</span>
-
-        </NavLink>
-
-        <NavLink href="/give"
-                 class="nav-item">
-
-            <span class="nav-icon">♡</span>
-            <span>Give</span>
-
-        </NavLink>
-
-        <NavLink href="/announcements"
-                 class="nav-item">
-
-            <span class="nav-icon">◈</span>
-            <span>Announcements</span>
-
-        </NavLink>
-
-        <NavLink href="/gallery"
-                 class="nav-item">
-
-            <span class="nav-icon">♧</span>
-            <span>Gallery</span>
-
-        </NavLink>
-
-        <NavLink href="/outreach"
-                 class="nav-item">
-
-            <span class="nav-icon">♙</span>
-            <span>Outreach</span>
-
-        </NavLink>
-
-        <NavLink href="/messages"
-                 class="nav-item">
-
-            <span class="nav-icon">✉</span>
-            <span>Messages</span>
-
-        </NavLink>
-
-        <NavLink href="/profile"
-                 class="nav-item">
-
-            <span class="nav-icon">♙</span>
-            <span>Profile</span>
-
-        </NavLink>
-
-    </nav>
-
-    <div class="sidebar-footer">
-
-        <div class="motto">
-            <div>Real People.</div>
-            <div>Real Faith.</div>
-            <div>A Greater Purpose.</div>
+        <div class="navigation-label">
+            MENU
         </div>
 
-        <div class="motto-line"></div>
+        <nav class="nav flex-column">
 
+            <NavLink href="/dashboard"
+                     Match="NavLinkMatch.All"
+                     class="nav-item">
+
+                <i class="bi bi-grid-1x2-fill"></i>
+
+                <span>Dashboard</span>
+
+            </NavLink>
+
+
+            <NavLink href="/sermons"
+                     class="nav-item">
+
+                <i class="bi bi-play-circle-fill"></i>
+
+                <span>Sermons</span>
+
+            </NavLink>
+
+
+            <NavLink href="/services"
+                     class="nav-item">
+
+                <i class="bi bi-calendar2-week-fill"></i>
+
+                <span>Services</span>
+
+            </NavLink>
+
+
+            <NavLink href="/prayer-request"
+                     class="nav-item">
+
+                <i class="bi bi-heart-fill"></i>
+
+                <span>Prayer Request</span>
+
+            </NavLink>
+
+
+            <NavLink href="/give"
+                     class="nav-item">
+
+                <i class="bi bi-gift-fill"></i>
+
+                <span>Give</span>
+
+            </NavLink>
+
+
+            <NavLink href="/announcements"
+                     class="nav-item">
+
+                <i class="bi bi-megaphone-fill"></i>
+
+                <span>Announcements</span>
+
+            </NavLink>
+
+
+            <NavLink href="/gallery"
+                     class="nav-item">
+
+                <i class="bi bi-images"></i>
+
+                <span>Gallery</span>
+
+            </NavLink>
+
+
+            <NavLink href="/outreach"
+                     class="nav-item">
+
+                <i class="bi bi-people-fill"></i>
+
+                <span>Outreach</span>
+
+            </NavLink>
+
+
+            <NavLink href="/messages"
+                     class="nav-item">
+
+                <i class="bi bi-chat-left-text-fill"></i>
+
+                <span>Messages</span>
+
+            </NavLink>
+
+
+            <NavLink href="/profile"
+                     class="nav-item">
+
+                <i class="bi bi-person-circle"></i>
+
+                <span>Profile</span>
+
+            </NavLink>
+
+        </nav>
+
+    </div>
+
+
+    <!-- Bottom section -->
+    <div class="sidebar-bottom">
+
+        <!-- Motto card -->
+        <div class="motto-card">
+
+            <div class="motto-icon">
+
+                <i class="bi bi-heart-fill"></i>
+
+            </div>
+
+            <div class="motto-text">
+
+                <div>Real People.</div>
+                <div>Real Faith.</div>
+                <div>A Greater Purpose.</div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Logout -->
         <NavLink href="/logout"
                  class="logout-link">
 
-            <span>↪</span>
+            <i class="bi bi-box-arrow-right"></i>
+
             <span>Logout</span>
 
         </NavLink>

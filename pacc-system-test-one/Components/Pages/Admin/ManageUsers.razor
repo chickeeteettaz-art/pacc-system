@@ -1,5 +1,1420 @@
-﻿<h3>ManageUsers</h3>
+﻿@page "/admin/users"
+
+@layout AdminLayout
+
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IJSRuntime JS
+
+<div class="manage-users-page m">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header m-4">
+
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="page-header-icon">
+                    <i class="bi bi-people-fill"></i>
+                </span>
+
+                <span class="text-primary fw-semibold">
+                    Administration
+                </span>
+            </div>
+
+            <h1 class="page-title mb-1">
+                Manage Users
+            </h1>
+
+            <p class="page-description mb-0">
+                View and manage registered users and their account roles.
+            </p>
+        </div>
+
+        <button class="btn btn-primary refresh-button"
+                @onclick="LoadUsersAsync"
+                disabled="@loading">
+
+            @if (loading)
+            {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+            }
+            else
+            {
+                <i class="bi bi-arrow-clockwise me-2"></i>
+            }
+
+            Refresh
+        </button>
+
+    </div>
+
+
+    <!-- ERROR MESSAGE -->
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-start gap-3 m-4"
+             role="alert">
+
+            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+
+            <div class="flex-grow-1">
+                <strong>Unable to complete the request.</strong>
+
+                <div class="small mt-1">
+                    @errorMessage
+                </div>
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- SUCCESS MESSAGE -->
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-3 m-4"
+             role="alert">
+
+            <i class="bi bi-check-circle-fill fs-5"></i>
+
+            <div class="flex-grow-1">
+                @successMessage
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- LOADING -->
+    @if (loading && Users.Count == 0)
+    {
+        <div class="loading-card m-4">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+            </div>
+
+            <h5 class="mt-3 mb-1">
+                Loading users
+            </h5>
+
+            <p class="text-muted mb-0">
+                Retrieving registered users from Firebase...
+            </p>
+
+        </div>
+    }
+    else
+    {
+
+        <!-- STATISTICS -->
+        <div class="row g-3 mb-4">
+
+            <!-- TOTAL USERS -->
+            <div class="col-12 col-sm-6 col-xl-4">
+
+                <div class="user-stat-card">
+
+                    <div class="stat-content">
+
+                        <span class="stat-label">
+                            Total Users
+                        </span>
+
+                        <h2>
+                            @Users.Count
+                        </h2>
+
+                        <small>
+                            Registered accounts
+                        </small>
+
+                    </div>
+
+                    <div class="stat-icon users">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- REGULAR USERS -->
+            <div class="col-12 col-sm-6 col-xl-4">
+
+                <div class="user-stat-card">
+
+                    <div class="stat-content">
+
+                        <span class="stat-label">
+                            Regular Users
+                        </span>
+
+                        <h2>
+                            @RegularUserCount
+                        </h2>
+
+                        <small>
+                            Standard accounts
+                        </small>
+
+                    </div>
+
+                    <div class="stat-icon regular">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ADMINISTRATORS -->
+            <div class="col-12 col-sm-6 col-xl-4">
+
+                <div class="user-stat-card">
+
+                    <div class="stat-content">
+
+                        <span class="stat-label">
+                            Administrators
+                        </span>
+
+                        <h2>
+                            @AdminCount
+                        </h2>
+
+                        <small>
+                            Administrative accounts
+                        </small>
+
+                    </div>
+
+                    <div class="stat-icon admin">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- USER MANAGEMENT CARD -->
+        <div class="card user-management-card">
+
+            <!-- TOOLBAR -->
+            <div class="user-toolbar">
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Registered Users
+                    </h5>
+
+                    <span class="text-muted small">
+                        @Users.Count user(s) displayed
+                    </span>
+
+                </div>
+
+
+                <div class="user-toolbar-controls">
+
+                    <!-- SEARCH -->
+                    <div class="user-search">
+
+                        <i class="bi bi-search"></i>
+
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Search users..."
+                               @bind="SearchTerm"
+                               @bind:event="oninput" />
+
+                    </div>
+
+
+                    <!-- ROLE FILTER -->
+                    <select class="form-select user-filter"
+                            @bind="SelectedRole">
+
+                        <option value="All">
+                            All roles
+                        </option>
+
+                        <option value="User">
+                            Users
+                        </option>
+
+                        <option value="Admin">
+                            Administrators
+                        </option>
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <!-- ACTIVE FILTERS -->
+            @if (!string.IsNullOrWhiteSpace(SearchTerm)
+                || SelectedRole != "All")
+            {
+                <div class="active-filters">
+
+                    <span class="text-muted small">
+                        Active filters:
+                    </span>
+
+                    @if (!string.IsNullOrWhiteSpace(SearchTerm))
+                    {
+                        <span class="filter-pill">
+
+                            <i class="bi bi-search"></i>
+
+                            @SearchTerm
+
+                            <button type="button"
+                                    @onclick="ClearSearch">
+                                <i class="bi bi-x"></i>
+                            </button>
+
+                        </span>
+                    }
+
+                    @if (SelectedRole != "All")
+                    {
+                        <span class="filter-pill">
+
+                            <i class="bi bi-shield"></i>
+
+                            @SelectedRole
+
+                            <button type="button"
+                                    @onclick="ClearRoleFilter">
+                                <i class="bi bi-x"></i>
+                            </button>
+
+                        </span>
+                    }
+
+                    <button class="btn btn-sm btn-link text-decoration-none"
+                            @onclick="ClearFilters">
+
+                        Clear all
+
+                    </button>
+
+                </div>
+            }
+
+
+            <!-- EMPTY STATE -->
+            @if (!FilteredUsers.Any())
+            {
+                <div class="empty-state">
+
+                    <div class="empty-state-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+
+                    <h5>
+                        No users found
+                    </h5>
+
+                    @if (Users.Count == 0)
+                    {
+                        <p class="text-muted">
+                            There are currently no registered users.
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">
+                            Try changing your search or role filter.
+                        </p>
+
+                        <button class="btn btn-outline-primary btn-sm"
+                                @onclick="ClearFilters">
+
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>
+
+                            Clear Filters
+
+                        </button>
+                    }
+
+                </div>
+            }
+            else
+            {
+
+                <!-- TABLE -->
+                <div class="table-responsive">
+
+                    <table class="table user-table align-middle mb-0">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    User
+                                </th>
+
+                                <th>
+                                    Email
+                                </th>
+
+                                <th>
+                                    Role
+                                </th>
+
+                                <th>
+                                    Firebase UID
+                                </th>
+
+                                <th class="text-end">
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var user in FilteredUsers)
+                            {
+                                <tr>
+
+                                    <!-- USER -->
+                                    <td>
+
+                                        <div class="d-flex align-items-center gap-3">
+
+                                            <div class="user-list-avatar">
+                                                @user.Initials
+                                            </div>
+
+                                            <div>
+
+                                                <div class="fw-semibold user-name">
+
+                                                    @(string.IsNullOrWhiteSpace(user.FullName)
+                                                        ? "Unnamed User"
+                                                        : user.FullName)
+
+                                                </div>
+
+                                                <small class="text-muted">
+
+                                                    @user.FirstName @user.LastName
+
+                                                </small>
+
+                                            </div>
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- EMAIL -->
+                                    <td>
+
+                                        <div class="email-cell">
+
+                                            <i class="bi bi-envelope me-2"></i>
+
+                                            @user.EmailAddress
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <!-- ROLE -->
+                                    <td>
+
+                                        @if (IsAdmin(user))
+                                        {
+                                            <span class="role-badge admin-role">
+
+                                                <i class="bi bi-shield-check"></i>
+
+                                                Administrator
+
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="role-badge user-role">
+
+                                                <i class="bi bi-person"></i>
+
+                                                User
+
+                                            </span>
+                                        }
+
+                                    </td>
+
+
+                                    <!-- FIREBASE UID -->
+                                    <td>
+
+                                        <code class="firebase-uid"
+                                              title="@user.FirebaseUid">
+
+                                            @ShortenUid(
+                                                string.IsNullOrWhiteSpace(user.FirebaseUid)
+                                                    ? user.UserId
+                                                    : user.FirebaseUid)
+
+                                        </code>
+
+                                    </td>
+
+
+                                    <!-- ACTIONS -->
+                                    <td class="text-end">
+
+                                        <div class="dropdown">
+
+                                            <button class="btn btn-light action-button dropdown-toggle"
+                                                    type="button"
+                                                    data-bs-toggle="dropdown"
+                                                    aria-expanded="false">
+
+                                                <i class="bi bi-three-dots"></i>
+
+                                                <span class="d-none d-lg-inline ms-1">
+                                                    Actions
+                                                </span>
+
+                                            </button>
+
+
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+
+                                                @if (!IsAdmin(user))
+                                                {
+                                                    <li>
+
+                                                        <button class="dropdown-item"
+                                                                @onclick="() => MakeAdminAsync(user)">
+
+                                                            <i class="bi bi-shield-plus me-2 text-primary"></i>
+
+                                                            Make Administrator
+
+                                                        </button>
+
+                                                    </li>
+                                                }
+                                                else
+                                                {
+                                                    <li>
+
+                                                        <button class="dropdown-item"
+                                                                @onclick="() => MakeUserAsync(user)">
+
+                                                            <i class="bi bi-person-down me-2 text-warning"></i>
+
+                                                            Remove Administrator
+
+                                                        </button>
+
+                                                    </li>
+                                                }
+
+
+                                                <li>
+                                                    <hr class="dropdown-divider" />
+                                                </li>
+
+
+                                                <li>
+
+                                                    <button class="dropdown-item text-danger"
+                                                            @onclick="() => DeleteUserAsync(user)">
+
+                                                        <i class="bi bi-trash3 me-2"></i>
+
+                                                        Delete Profile
+
+                                                    </button>
+
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- TABLE FOOTER -->
+                <div class="table-footer">
+
+                    <div class="text-muted small">
+
+                        Showing
+                        <strong>@Users.Count</strong>
+                        of
+                        <strong>@Users.Count</strong>
+                        users
+
+                    </div>
+
+                    <div class="text-muted small">
+
+                        <i class="bi bi-database me-1"></i>
+
+                        Firebase Firestore
+
+                    </div>
+
+                </div>
+
+            }
+
+        </div>
+
+    }
+
+</div>
+
+
+<style>
+
+    .manage-users-page {
+        width: 100%;
+    }
+
+
+    /* PAGE HEADER */
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+    }
+
+    .page-header-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .page-description {
+        color: #64748b;
+    }
+
+    .refresh-button {
+        min-width: 110px;
+        border-radius: 8px;
+    }
+
+
+    /* LOADING */
+
+    .loading-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+
+    /* STATISTICS */
+
+    .user-stat-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        min-height: 145px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        transition: all .2s ease;
+    }
+
+        .user-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .07);
+        }
+
+    .stat-label {
+        display: block;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .stat-content h2 {
+        color: #0f172a;
+        font-size: 30px;
+        margin: 8px 0 2px;
+        font-weight: 700;
+    }
+
+    .stat-content small {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+    .stat-icon {
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 20px;
+    }
+
+        .stat-icon.users {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .stat-icon.regular {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .stat-icon.admin {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+
+    /* MANAGEMENT CARD */
+
+    .user-management-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #ffffff;
+        box-shadow: 0 4px 18px rgba(15, 23, 42, .04);
+    }
+
+
+    /* TOOLBAR */
+
+    .user-toolbar {
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .user-toolbar-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .user-search {
+        position: relative;
+        width: 280px;
+    }
+
+        .user-search i {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            z-index: 2;
+        }
+
+        .user-search input {
+            padding-left: 38px;
+            border-radius: 8px;
+            border-color: #e2e8f0;
+            height: 40px;
+        }
+
+            .user-search input:focus {
+                border-color: #2563eb;
+                box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .1);
+            }
+
+    .user-filter {
+        width: 175px;
+        height: 40px;
+        border-radius: 8px;
+        border-color: #e2e8f0;
+    }
+
+
+    /* ACTIVE FILTERS */
+
+    .active-filters {
+        padding: 12px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #ffffff;
+        border: 1px solid #dbeafe;
+        color: #2563eb;
+        border-radius: 20px;
+        padding: 4px 8px 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+        .filter-pill button {
+            border: none;
+            background: transparent;
+            color: #64748b;
+            padding: 0;
+            line-height: 1;
+        }
+
+
+    /* TABLE */
+
+    .user-table {
+        min-width: 900px;
+    }
+
+        .user-table thead th {
+            background: #f8fafc;
+            color: #64748b;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 14px 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .user-table tbody td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+        }
+
+        .user-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .user-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+
+    /* AVATAR */
+
+    .user-list-avatar {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 50%;
+        background: #eff6ff;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .user-name {
+        color: #0f172a;
+    }
+
+
+    /* EMAIL */
+
+    .email-cell {
+        display: flex;
+        align-items: center;
+        color: #64748b;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+        .email-cell i {
+            color: #94a3b8;
+        }
+
+
+    /* ROLE */
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .admin-role {
+        background: #eef2ff;
+        color: #4338ca;
+    }
+
+    .user-role {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+
+    /* UID */
+
+    .firebase-uid {
+        background: #f8fafc;
+        color: #64748b;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        padding: 4px 7px;
+        font-size: 11px;
+    }
+
+
+    /* ACTIONS */
+
+    .action-button {
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        border-radius: 7px;
+        background: #ffffff;
+        padding: 6px 10px;
+    }
+
+        .action-button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+    .dropdown-item {
+        font-size: 13px;
+        padding: 9px 14px;
+    }
+
+
+    /* EMPTY STATE */
+
+    .empty-state {
+        padding: 70px 20px;
+        text-align: center;
+    }
+
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 27px;
+    }
+
+    .empty-state h5 {
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+
+    /* FOOTER */
+
+    .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-top: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+
+
+    /* MOBILE */
+
+    @@media (max-width: 991px) {
+
+        .page-header {
+            align-items: flex-start;
+        }
+
+        .user-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .user-toolbar-controls {
+            width: 100%;
+        }
+
+        .user-search {
+            flex: 1;
+            width: auto;
+        }
+
+        .user-filter {
+            width: 180px;
+        }
+    }
+
+
+    @@media (max-width: 767px) {
+
+        .page-header {
+            flex-direction: column;
+        }
+
+        .refresh-button {
+            width: 100%;
+        }
+
+        .user-toolbar-controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .user-search {
+            width: 100%;
+        }
+
+        .user-filter {
+            width: 100%;
+        }
+
+        .table-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .page-title {
+            font-size: 24px;
+        }
+    }
+
+</style>
+
 
 @code {
+
+    private List<User> Users { get; set; } = new();
+
+    private string SearchTerm { get; set; } = string.Empty;
+
+    private string SelectedRole { get; set; } = "All";
+
+    private bool loading = true;
+
+    private string errorMessage = string.Empty;
+
+    private string successMessage = string.Empty;
+
+
+    /* -------------------------------------------------------
+       FILTERED USERS
+    ------------------------------------------------------- */
+
+    private IEnumerable<User> FilteredUsers =>
+        Users
+            .Where(user =>
+                string.IsNullOrWhiteSpace(SearchTerm)
+                ||
+                (user.FirstName?.Contains(
+                    SearchTerm,
+                    StringComparison.OrdinalIgnoreCase) ?? false)
+                ||
+                (user.LastName?.Contains(
+                    SearchTerm,
+                    StringComparison.OrdinalIgnoreCase) ?? false)
+                ||
+                (user.EmailAddress?.Contains(
+                    SearchTerm,
+                    StringComparison.OrdinalIgnoreCase) ?? false)
+                ||
+                (user.FirebaseUid?.Contains(
+                    SearchTerm,
+                    StringComparison.OrdinalIgnoreCase) ?? false)
+                ||
+                (user.UserId?.Contains(
+                    SearchTerm,
+                    StringComparison.OrdinalIgnoreCase) ?? false)
+            )
+            .Where(user =>
+                SelectedRole == "All"
+                ||
+                user.UserType.Equals(
+                    SelectedRole,
+                    StringComparison.OrdinalIgnoreCase)
+            );
+
+
+    /* -------------------------------------------------------
+       STATISTICS
+    ------------------------------------------------------- */
+
+    private int AdminCount =>
+        Users.Count(IsAdmin);
+
+
+    private int RegularUserCount =>
+        Users.Count(user => !IsAdmin(user));
+
+
+    /* -------------------------------------------------------
+       INITIALIZATION
+    ------------------------------------------------------- */
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+
+    /* -------------------------------------------------------
+       LOAD USERS
+    ------------------------------------------------------- */
+
+    private async Task LoadUsersAsync()
+    {
+        loading = true;
+
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            Users = await AuthService.GetUsersAsync();
+
+            Users ??= new List<User>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = GetFriendlyErrorMessage(ex);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+
+    /* -------------------------------------------------------
+       ROLE CHECK
+    ------------------------------------------------------- */
+
+    private bool IsAdmin(User user)
+    {
+        return user.UserType.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    /* -------------------------------------------------------
+       MAKE ADMIN
+    ------------------------------------------------------- */
+
+    private async Task MakeAdminAsync(User user)
+    {
+        await ChangeRoleAsync(user, "Admin");
+    }
+
+
+    /* -------------------------------------------------------
+       MAKE REGULAR USER
+    ------------------------------------------------------- */
+
+    private async Task MakeUserAsync(User user)
+    {
+        await ChangeRoleAsync(user, "User");
+    }
+
+
+    /* -------------------------------------------------------
+       CHANGE ROLE
+    ------------------------------------------------------- */
+
+    private async Task ChangeRoleAsync(
+        User user,
+        string newRole)
+    {
+        ClearMessages();
+
+        if (user.UserId == AuthService.CurrentUser?.Uid
+            && newRole != "Admin")
+        {
+            errorMessage =
+                "You cannot remove administrator access from your own account.";
+
+            return;
+        }
+
+        string action;
+
+        if (newRole.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            action = $"make {GetUserDisplayName(user)} an administrator";
+        }
+        else
+        {
+            action = $"remove administrator access from {GetUserDisplayName(user)}";
+        }
+
+
+        var confirmed = await ConfirmActionAsync(
+            $"Are you sure you want to {action}?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+
+        try
+        {
+            await AuthService.UpdateUserRoleAsync(
+                user.UserId,
+                newRole);
+
+            user.UserType = newRole;
+
+            successMessage =
+                $"{GetUserDisplayName(user)} is now a {newRole}.";
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = GetFriendlyErrorMessage(ex);
+        }
+    }
+
+
+    /* -------------------------------------------------------
+       DELETE PROFILE
+    ------------------------------------------------------- */
+
+    private async Task DeleteUserAsync(User user)
+    {
+        ClearMessages();
+
+
+        if (user.UserId == AuthService.CurrentUser?.Uid)
+        {
+            errorMessage =
+                "You cannot delete your own profile from the user management page.";
+
+            return;
+        }
+
+
+        var confirmed = await ConfirmActionAsync(
+            $"Delete the Firestore profile for {GetUserDisplayName(user)} ({user.EmailAddress})?");
+
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+
+        try
+        {
+            await AuthService.DeleteUserProfileAsync(
+                user.UserId);
+
+            Users.Remove(user);
+
+            successMessage =
+                $"The profile for {GetUserDisplayName(user)} has been deleted.";
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = GetFriendlyErrorMessage(ex);
+        }
+    }
+
+
+    /* -------------------------------------------------------
+       JAVASCRIPT CONFIRMATION
+    ------------------------------------------------------- */
+
+    private async Task<bool> ConfirmActionAsync(
+        string message)
+    {
+        return await JS.InvokeAsync<bool>(
+            "confirm",
+            message);
+    }
+
+
+    /* -------------------------------------------------------
+       SEARCH / FILTER
+    ------------------------------------------------------- */
+
+    private void ClearSearch()
+    {
+        SearchTerm = string.Empty;
+    }
+
+
+    private void ClearRoleFilter()
+    {
+        SelectedRole = "All";
+    }
+
+
+    private void ClearFilters()
+    {
+        SearchTerm = string.Empty;
+        SelectedRole = "All";
+    }
+
+
+    /* -------------------------------------------------------
+       MESSAGES
+    ------------------------------------------------------- */
+
+    private void ClearMessages()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+    }
+
+
+    /* -------------------------------------------------------
+       DISPLAY NAME
+    ------------------------------------------------------- */
+
+    private string GetUserDisplayName(User user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.FullName))
+        {
+            return user.FullName;
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.EmailAddress))
+        {
+            return AuthService.GetDisplayName(
+                user.EmailAddress);
+        }
+
+        return "User";
+    }
+
+
+    /* -------------------------------------------------------
+       SHORTEN FIREBASE UID
+    ------------------------------------------------------- */
+
+    private string ShortenUid(string uid)
+    {
+        if (string.IsNullOrWhiteSpace(uid))
+        {
+            return "N/A";
+        }
+
+        if (uid.Length <= 16)
+        {
+            return uid;
+        }
+
+        return $"{uid[..8]}...{uid[^6..]}";
+    }
+
+
+    /* -------------------------------------------------------
+       FRIENDLY ERROR
+    ------------------------------------------------------- */
+
+    private string GetFriendlyErrorMessage(Exception ex)
+    {
+        var message = ex.Message;
+
+        if (message.Contains(
+            "Missing or insufficient permissions",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Firebase denied this operation. Check your Firestore Security Rules and make sure the logged-in account has administrator access.";
+        }
+
+        if (message.Contains(
+            "You must be logged in",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Your Firebase session has expired. Please log in again.";
+        }
+
+        return message;
+    }
 
 }

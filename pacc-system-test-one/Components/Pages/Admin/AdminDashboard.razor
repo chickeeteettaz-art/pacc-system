@@ -1,5 +1,302 @@
-﻿<h3>AdminDashboard</h3>
+﻿@page "/admin/dashboard"
+
+@layout AdminLayout
+
+@using pacc_system_test_one.Services
+@using pacc_system_test_one.Models
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Admin Dashboard</PageTitle>
+
+
+@if (loading)
+{
+    <div class="d-flex justify-content-center align-items-center"
+         style="min-height: 400px;">
+
+        <div class="text-center">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+            </div>
+
+            <p class="text-muted mt-3">
+                Loading administration dashboard...
+            </p>
+
+        </div>
+
+    </div>
+}
+else if (isAdmin)
+{
+    <!-- PAGE HEADER -->
+
+    <div class="page-header m-4">
+
+        <div>
+
+            <h1 class="page-title">
+                Admin Dashboard
+            </h1>
+
+            <p class="page-description">
+                Manage the Christian Centre platform.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- STATISTICS -->
+
+    <div class="row g-4 m-4">
+
+        <!-- Users -->
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="card dashboard-card h-100">
+
+                <div class="card-body">
+
+                    <div class="dashboard-icon">
+
+                        <i class="bi bi-people"></i>
+
+                    </div>
+
+                    <p class="text-muted mb-1 mt-3">
+                        Total Users
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Donations -->
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="card dashboard-card h-100">
+
+                <div class="card-body">
+
+                    <div class="dashboard-icon">
+
+                        <i class="bi bi-wallet2"></i>
+
+                    </div>
+
+                    <p class="text-muted mb-1 mt-3">
+                        Donations
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Sermons -->
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="card dashboard-card h-100">
+
+                <div class="card-body">
+
+                    <div class="dashboard-icon">
+
+                        <i class="bi bi-play-circle"></i>
+
+                    </div>
+
+                    <p class="text-muted mb-1 mt-3">
+                        Sermons
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Messages -->
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="card dashboard-card h-100">
+
+                <div class="card-body">
+
+                    <div class="dashboard-icon">
+
+                        <i class="bi bi-chat-dots"></i>
+
+                    </div>
+
+                    <p class="text-muted mb-1 mt-3">
+                        Messages
+                    </p>
+
+                    <h2 class="fw-bold mb-0">
+                        0
+                    </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- QUICK ACTIONS -->
+
+    <div class="card m-4">
+
+        <div class="card-body">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+
+                    <h5 class="fw-bold mb-1">
+                        Administration
+                    </h5>
+
+                    <p class="text-muted mb-0">
+                        Quickly access management areas.
+                    </p>
+
+                </div>
+
+                <i class="bi bi-speedometer2 fs-3 text-primary"></i>
+
+            </div>
+
+
+            <div class="row g-3">
+
+                <div class="col-md-6 col-lg-3">
+
+                    <a href="/admin/users"
+                       class="btn btn-light w-100 py-3">
+
+                        <i class="bi bi-people me-2"></i>
+
+                        Manage Users
+
+                    </a>
+
+                </div>
+
+
+                <div class="col-md-6 col-lg-3">
+
+                    <a href="/admin/announcements"
+                       class="btn btn-light w-100 py-3">
+
+                        <i class="bi bi-megaphone me-2"></i>
+
+                        Announcements
+
+                    </a>
+
+                </div>
+
+
+                <div class="col-md-6 col-lg-3">
+
+                    <a href="/admin/sermons"
+                       class="btn btn-light w-100 py-3">
+
+                        <i class="bi bi-play-circle me-2"></i>
+
+                        Manage Sermons
+
+                    </a>
+
+                </div>
+
+
+                <div class="col-md-6 col-lg-3">
+
+                    <a href="/admin/gallery"
+                       class="btn btn-light w-100 py-3">
+
+                        <i class="bi bi-images me-2"></i>
+
+                        Manage Gallery
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">
+
+        <i class="bi bi-shield-exclamation me-2"></i>
+
+        You do not have permission to access the administration area.
+
+    </div>
+}
+
 
 @code {
 
+    private bool loading = true;
+    private bool isAdmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await AuthService.LoadCurrentUserAsync();
+
+        if (user == null)
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        isAdmin = user.UserType.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase);
+
+        loading = false;
+
+        if (!isAdmin)
+        {
+            Navigation.NavigateTo("/user/dashboard", true);
+        }
+    }
 }
