@@ -182,20 +182,50 @@ namespace pacc_system_test_one.Services
         {
             await WaitForFirebaseAsync();
 
+            try
+            {
+                var result =
+                    await _jsRuntime.InvokeAsync<AuthUser?>(
+                        "firebaseAuth.getCurrentUser");
 
-            var result =
-                await _jsRuntime.InvokeAsync<AuthUser?>(
-                    "firebaseAuth.getCurrentUser"
+                CurrentUser = result;
+
+                return CurrentUser;
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getCurrentUser error: {ex.Message}"
                 );
 
+                CurrentUser = null;
 
-            CurrentUser =
-                result;
-
-
-            return CurrentUser;
+                return null;
+            }
         }
+        public string GetDisplayName(string email)
+        {
+            var username = email.Split('@')[0];
 
+            if (string.IsNullOrWhiteSpace(username))
+                return "User";
+
+            username = username
+                .Replace(".", " ")
+                .Replace("_", " ")
+                .Replace("-", " ");
+
+            var parts = username
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+            return string.Join(
+                " ",
+                parts.Select(part =>
+                    char.ToUpper(part[0]) +
+                    part.Substring(1).ToLower()));
+        }
 
         // =====================================================
         // LOGOUT

@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="utf-8" />
 
     <meta name="viewport"
@@ -10,16 +11,23 @@
     <title>Christian Centre</title>
 
     <base href="/" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
 
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <!-- Your custom styles (must come AFTER Bootstrap) -->
+    <!-- Application CSS -->
     <link href="app.css" rel="stylesheet" />
-    <link rel="stylesheet" href="pacc-system-test-one.styles.css" />
+
+    <link rel="stylesheet"
+          href="pacc-system-test-one.styles.css" />
 
     <link rel="icon" href="data:,">
+
 </head>
 
 <body>
@@ -30,7 +38,9 @@
         Loading...
     </div>
 
-    <div id="blazor-error-ui" data-nosnippet>
+    <div id="blazor-error-ui"
+         data-nosnippet>
+
         An unhandled error has occurred.
 
         <a href="." class="reload">
@@ -40,135 +50,137 @@
         <span class="dismiss">
             🗙
         </span>
+
     </div>
 
-    <!-- Bootstrap 5 JS (needed for the hamburger menu) -->
+
+    <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="_framework/blazor.webview.js" autostart="false"></script>
 
     <!-- Firebase -->
     <script type="module">
 
-        import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+                import {
+                    initializeApp
+                } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
-        import {
-            getAuth,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut
-        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+                import {
+                    getAuth,
+                    createUserWithEmailAndPassword,
+                    signInWithEmailAndPassword,
+                    signOut,
+                    onAuthStateChanged,
+                    setPersistence,
+                    browserLocalPersistence
+                } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
-        import {
-            getFirestore,
-            doc,
-            setDoc,
-            getDoc
-        } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBpsFphitX3tnTVqWnkusMgU6G2kZNd-vI",
-            authDomain: "interview-prep-6caf8.firebaseapp.com",
-            projectId: "interview-prep-6caf8",
-            storageBucket: "interview-prep-6caf8.firebasestorage.app",
-            messagingSenderId: "7763277998",
-            appId: "1:7763277998:web:49d02d97d55c5a8f48d53f",
-            measurementId: "G-F52N8W4DF7"
-        };
+                import {
+                    getFirestore,
+                    doc,
+                    setDoc,
+                    getDoc
+                } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
-        let firebaseApp;
-        let auth;
-        let db;
+                /*
+                 * Firebase configuration
+                 */
+                const firebaseConfig = {
+
+                    apiKey: "AIzaSyBpsFphitX3tnTVqWnkusMgU6G2kZNd-vI",
+
+                    authDomain:
+                        "interview-prep-6caf8.firebaseapp.com",
+
+                    projectId:
+                        "interview-prep-6caf8",
+
+                    storageBucket:
+                        "interview-prep-6caf8.firebasestorage.app",
+
+                    messagingSenderId:
+                        "7763277998",
+
+                    appId:
+                        "1:7763277998:web:49d02d97d55c5a8f48d53f",
+
+                    measurementId:
+                        "G-F52N8W4DF7"
+                };
 
 
-        try {
-
-            firebaseApp = initializeApp(firebaseConfig);
-
-            auth = getAuth(firebaseApp);
-
-            db = getFirestore(firebaseApp);
-
-            console.log("Firebase initialized successfully");
+                let firebaseApp;
+                let auth;
+                let db;
 
 
-            window.firebaseAuth = {
+                /*
+                 * Initialize Firebase
+                 */
+                try {
 
-                register: async function (
-                    email,
-                    password,
-                    firstName,
-                    lastName
-                ) {
-
-                    try {
-
-                        const result =
-                            await createUserWithEmailAndPassword(
-                                auth,
-                                email,
-                                password
-                            );
-
-                        const user = result.user;
+                    firebaseApp =
+                        initializeApp(firebaseConfig);
 
 
-                        await setDoc(
-                            doc(db, "users", user.uid),
-                            {
-                                firebaseUid: user.uid,
-                                firstName: firstName,
-                                lastName: lastName,
-                                emailAddress: email,
-                                userType: "User"
-                            }
-                        );
+                    auth =
+                        getAuth(firebaseApp);
 
 
-                        return {
-                            success: true,
-                            uid: user.uid,
-                            firstName: firstName,
-                            lastName: lastName,
-                            emailAddress: email,
-                            userType: "User"
-                        };
+                    db =
+                        getFirestore(firebaseApp);
+
+
+                    /*
+                     * Keep the user authenticated between
+                     * page navigation and application restarts.
+                     */
+                    await setPersistence(
+                        auth,
+                        browserLocalPersistence
+                    );
+
+
+                    console.log(
+                        "Firebase initialized successfully"
+                    );
+
+
+                    /*
+                     * Wait until Firebase has determined
+                     * the current authentication state.
+                     */
+                    function waitForAuthState() {
+
+                        return new Promise((resolve) => {
+
+                            const unsubscribe =
+                                onAuthStateChanged(
+                                    auth,
+                                    (user) => {
+
+                                        unsubscribe();
+
+                                        resolve(user);
+
+                                    }
+                                );
+
+                        });
 
                     }
-                    catch (error) {
-
-                        console.error(
-                            "Firebase registration error:",
-                            error
-                        );
-
-                        return {
-                            success: false,
-                            message: error.message
-                        };
-                    }
-                },
 
 
-                login: async function (
-                    email,
-                    password
-                ) {
+                    /*
+                     * Get the Firestore profile for
+                     * the currently authenticated user.
+                     */
+                    async function getUserProfile(user) {
 
-                    try {
-
-                        const result =
-                            await signInWithEmailAndPassword(
-                                auth,
-                                email,
-                                password
-                            );
-
-                        const user = result.user;
+                        if (!user) {
+                            return null;
+                        }
 
 
                         const userDocument =
@@ -183,10 +195,24 @@
 
                         if (!userDocument.exists()) {
 
+                            console.warn(
+                                "Firestore profile does not exist for:",
+                                user.uid
+                            );
+
                             return {
-                                success: false,
-                                message:
-                                    "User profile does not exist."
+
+                                uid: user.uid,
+
+                                firstName: "",
+
+                                lastName: "",
+
+                                emailAddress:
+                                    user.email ?? "",
+
+                                userType: "User"
+
                             };
                         }
 
@@ -196,8 +222,6 @@
 
 
                         return {
-
-                            success: true,
 
                             uid: user.uid,
 
@@ -216,113 +240,328 @@
                                 data.userType ??
                                 "User"
                         };
-
                     }
-                    catch (error) {
 
-                        console.error(
-                            "Firebase login error:",
-                            error
-                        );
 
-                        return {
-                            success: false,
-                            message: error.message
+                    /*
+                     * Firebase bridge used by Blazor.
+                     */
+                    window.firebaseAuth = {
+
+
+                        /*
+                         * REGISTER
+                         */
+                        register: async function (
+                            email,
+                            password,
+                            firstName,
+                            lastName
+                        ) {
+
+                            try {
+
+                                const result =
+                                    await createUserWithEmailAndPassword(
+                                        auth,
+                                        email,
+                                        password
+                                    );
+
+
+                                const user =
+                                    result.user;
+
+
+                                /*
+                                 * Create the user's Firestore profile.
+                                 */
+                                await setDoc(
+
+                                    doc(
+                                        db,
+                                        "users",
+                                        user.uid
+                                    ),
+
+                                    {
+
+                                        firebaseUid:
+                                            user.uid,
+
+                                        firstName:
+                                            firstName,
+
+                                        lastName:
+                                            lastName,
+
+                                        emailAddress:
+                                            email,
+
+                                        userType:
+                                            "User"
+                                    }
+                                );
+
+
+                                console.log(
+                                    "User profile created:",
+                                    user.uid
+                                );
+
+
+                                return {
+
+                                    success: true,
+
+                                    uid:
+                                        user.uid,
+
+                                    firstName:
+                                        firstName,
+
+                                    lastName:
+                                        lastName,
+
+                                    emailAddress:
+                                        email,
+
+                                    userType:
+                                        "User"
+                                };
+
+                            }
+                            catch (error) {
+
+                                console.error(
+                                    "Firebase registration error:",
+                                    error
+                                );
+
+
+                                return {
+
+                                    success: false,
+
+                                    message:
+                                        error.message
+                                };
+                            }
+                        },
+
+
+                        /*
+                         * LOGIN
+                         */
+                        login: async function (
+                            email,
+                            password
+                        ) {
+
+                            try {
+
+                                const result =
+                                    await signInWithEmailAndPassword(
+                                        auth,
+                                        email,
+                                        password
+                                    );
+
+
+                                const user =
+                                    result.user;
+
+
+                                console.log(
+                                    "Firebase login successful:",
+                                    user.uid
+                                );
+
+
+                                /*
+                                 * Firebase has authenticated the user.
+                                 * Now retrieve their Firestore profile.
+                                 */
+                                const profile =
+                                    await getUserProfile(user);
+
+
+                                if (!profile) {
+
+                                    return {
+
+                                        success: false,
+
+                                        message:
+                                            "Unable to load user profile."
+                                    };
+                                }
+
+
+                                return {
+
+                                    success: true,
+
+                                    uid:
+                                        profile.uid,
+
+                                    firstName:
+                                        profile.firstName,
+
+                                    lastName:
+                                        profile.lastName,
+
+                                    emailAddress:
+                                        profile.emailAddress,
+
+                                    userType:
+                                        profile.userType
+                                };
+
+                            }
+                            catch (error) {
+
+                                console.error(
+                                    "Firebase login error:",
+                                    error
+                                );
+
+
+                                return {
+
+                                    success: false,
+
+                                    message:
+                                        error.message
+                                };
+                            }
+                        },
+
+
+                        /*
+                         * GET CURRENT USER
+                         */
+                        getCurrentUser: async function () {
+
+                            console.log(
+                                "Checking Firebase authentication state..."
+                            );
+
+
+                            /*
+                             * IMPORTANT:
+                             *
+                             * Do not directly use:
+                             *
+                             * auth.currentUser
+                             *
+                             * because Firebase may still be
+                             * restoring the authentication state.
+                             */
+                            const user =
+                                await waitForAuthState();
+
+
+                            if (!user) {
+
+                                console.log(
+                                    "No authenticated Firebase user."
+                                );
+
+                                return null;
+                            }
+
+
+                            console.log(
+                                "Authenticated Firebase user:",
+                                user.email
+                            );
+
+
+                            return await getUserProfile(user);
+                        },
+
+
+                        /*
+                         * LOGOUT
+                         */
+                        logout: async function () {
+
+                            try {
+
+                                await signOut(auth);
+
+
+                                console.log(
+                                    "Firebase user signed out"
+                                );
+
+
+                                return {
+
+                                    success: true
+
+                                };
+
+                            }
+                            catch (error) {
+
+                                console.error(
+                                    "Firebase logout error:",
+                                    error
+                                );
+
+
+                                return {
+
+                                    success: false,
+
+                                    message:
+                                        error.message
+                                };
+                            }
+                        }
+
+                    };
+
+
+                    /*
+                     * Firebase is ready.
+                     */
+                    window.isFirebaseReady =
+                        function () {
+
+                            return true;
+
                         };
-                    }
-                },
 
 
-                logout: async function () {
+                    console.log(
+                        "Firebase authentication bridge ready"
+                    );
 
-                    await signOut(auth);
-
-                    return {
-                        success: true
-                    };
-                },
-
-
-                getCurrentUser: async function () {
-
-                    const user = auth.currentUser;
-
-                    if (!user) {
-                        return null;
-                    }
-
-
-                    const userDocument =
-                        await getDoc(
-                            doc(
-                                db,
-                                "users",
-                                user.uid
-                            )
-                        );
-
-
-                    if (!userDocument.exists()) {
-                        return null;
-                    }
-
-
-                    const data =
-                        userDocument.data();
-
-
-                    return {
-
-                        uid: user.uid,
-
-                        firstName:
-                            data.firstName ?? "",
-
-                        lastName:
-                            data.lastName ?? "",
-
-                        emailAddress:
-                            data.emailAddress ??
-                            user.email ??
-                            "",
-
-                        userType:
-                            data.userType ??
-                            "User"
-                    };
                 }
+                catch (error) {
 
-            };
-
-
-            // Explicit readiness function
-            window.isFirebaseReady = function () {
-                return true;
-            };
+                    console.error(
+                        "Firebase initialization failed:",
+                        error
+                    );
 
 
-            console.log(
-                "Firebase authentication bridge ready"
-            );
+                    window.isFirebaseReady =
+                        function () {
 
-        }
-        catch (error) {
+                            return false;
 
-            console.error(
-                "Firebase initialization failed:",
-                error
-            );
+                        };
 
-
-            window.isFirebaseReady = function () {
-                return false;
-            };
-
-        }
+                }
 
     </script>
 
 
+    <!-- Blazor WebView - ONLY ONCE -->
     <script src="_framework/blazor.webview.js"
             autostart="false">
     </script>
