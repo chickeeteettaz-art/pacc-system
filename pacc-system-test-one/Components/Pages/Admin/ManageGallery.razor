@@ -1,5 +1,1443 @@
-﻿<h3>ManageGallery</h3>
+﻿@page "/admin/gallery"
+
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@layout AdminLayout
+
+@inject FirebaseAuthService AuthService
+@inject IBlobStorageService BlobStorageService
+@inject IJSRuntime JS
+
+
+<div class="gallery-page">
+
+    <!-- =========================================================
+         PAGE HEADER
+         ========================================================= -->
+
+    <div class="page-header">
+
+        <div class="page-header-content">
+
+            <div class="page-label">
+                <i class="bi bi-images"></i>
+                <span>Administration</span>
+            </div>
+
+            <h1>Manage Gallery</h1>
+
+            <p>
+                Upload and manage images displayed on the church gallery.
+            </p>
+
+        </div>
+
+        <div class="page-header-actions">
+
+            <button class="btn btn-outline-secondary"
+                    @onclick="LoadGalleryAsync"
+                    disabled="@loading">
+
+                <i class="bi bi-arrow-clockwise me-2"></i>
+
+                Refresh
+
+            </button>
+
+            <button class="btn btn-primary"
+                    @onclick="OpenCreateForm"
+                    disabled="@loading">
+
+                <i class="bi bi-plus-lg me-2"></i>
+
+                Add Image
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================================
+         ERROR MESSAGE
+         ========================================================= -->
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger gallery-alert">
+
+            <div class="alert-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+
+            <div class="alert-content">
+
+                <strong>
+                    Unable to complete the request.
+                </strong>
+
+                <p>
+                    @errorMessage
+                </p>
+
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- =========================================================
+         SUCCESS MESSAGE
+         ========================================================= -->
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success gallery-alert">
+
+            <div class="alert-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+
+            <div class="alert-content">
+
+                <strong>
+                    Success
+                </strong>
+
+                <p>
+                    @successMessage
+                </p>
+
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    @if (!AuthService.IsAdmin)
+    {
+        <!-- =====================================================
+             NOT ADMIN
+             ===================================================== -->
+
+        <div class="access-denied">
+
+            <div class="access-denied-icon">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+
+            <h4>
+                Administrator Access Required
+            </h4>
+
+            <p>
+                You must be logged in as an administrator
+                to manage the church gallery.
+            </p>
+
+        </div>
+    }
+    else
+    {
+
+        <!-- =====================================================
+             STATISTICS
+             ===================================================== -->
+
+        <div class="row g-3 mb-4">
+
+            <div class="col-12 col-md-4">
+
+                <div class="stat-card">
+
+                    <div class="stat-content">
+
+                        <span>
+                            Total Images
+                        </span>
+
+                        <h2>
+                            @GalleryImages.Count
+                        </h2>
+
+                    </div>
+
+                    <div class="stat-icon blue">
+                        <i class="bi bi-images"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <div class="stat-card">
+
+                    <div class="stat-content">
+
+                        <span>
+                            Uploaded Images
+                        </span>
+
+                        <h2>
+                            @GalleryImages.Count(
+                                image =>
+                                    !string.IsNullOrWhiteSpace(
+                                        image.ImageUrl))
+                        </h2>
+
+                    </div>
+
+                    <div class="stat-icon green">
+                        <i class="bi bi-cloud-check"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-12 col-md-4">
+
+                <div class="stat-card">
+
+                    <div class="stat-content">
+
+                        <span>
+                            Search Results
+                        </span>
+
+                        <h2>
+                            @FilteredGallery.Count()
+                        </h2>
+
+                    </div>
+
+                    <div class="stat-icon purple">
+                        <i class="bi bi-search"></i>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =====================================================
+             CREATE / EDIT FORM
+             ===================================================== -->
+        @if (showForm)
+        {
+            <div class="gallery-form-card">
+
+                <div class="form-header">
+
+                    <div>
+
+                        <div class="form-header-icon">
+                            <i class="bi bi-image"></i>
+                        </div>
+
+                        <div class="form-header-text">
+
+                            <h5>
+                                @(editingImage
+                                    ? "Edit Gallery Image"
+                                    : "Add Gallery Image")
+                            </h5>
+
+                            <p>
+                                @(editingImage
+                                    ? "Update the gallery image or replace the existing image."
+                                    : "Upload an image to Azure Blob Storage and add it to the gallery.")
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <button type="button"
+                            class="btn-close"
+                            @onclick="CloseForm"
+                            disabled="@saving">
+                    </button>
+
+                </div>
+
+
+                <div class="form-body">
+
+                    <div class="row g-4">
+
+                        <!-- =================================================
+                             TITLE
+                             ================================================= -->
+
+                        <div class="col-12">
+
+                            <label class="form-label">
+                                Image Title
+                                <span class="required">*</span>
+                            </label>
+
+                            <input type="text"
+                                   class="form-control"
+                                   @bind="formTitle"
+                                   placeholder="e.g. Sunday Worship Service"
+                                   disabled="@saving" />
+
+                        </div>
+
+
+                        <!-- =================================================
+                             IMAGE UPLOAD
+                             ================================================= -->
+
+                        <div class="col-12">
+
+                            <label class="form-label">
+                                @(editingImage
+                                    ? "Replace Image"
+                                    : "Select Image")
+
+                                @if (!editingImage)
+                                {
+                                    <span class="required">*</span>
+                                }
+                            </label>
+
+                            <InputFile OnChange="HandleImageSelected"
+                                       accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                                       class="form-control"
+                                       disabled="@saving" />
+
+                            <div class="form-help">
+
+                                <i class="bi bi-info-circle me-1"></i>
+
+                                Maximum file size:
+                                <strong>10 MB</strong>.
+
+                                Supported formats:
+                                JPG, JPEG, PNG, GIF and WEBP.
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- =================================================
+                             SELECTED FILE
+                             ================================================= -->
+                        @if (selectedImage != null)
+                        {
+                            <div class="col-12">
+
+                                <div class="selected-file">
+
+                                    <div class="selected-file-icon">
+
+                                        <i class="bi bi-file-earmark-image"></i>
+
+                                    </div>
+
+                                    <div class="selected-file-info">
+
+                                        <strong>
+                                            @selectedImage.Name
+                                        </strong>
+
+                                        <span>
+                                            @FormatFileSize(
+                                                selectedImage.Size)
+                                        </span>
+
+                                    </div>
+
+                                    @if (!saving)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                @onclick="ClearSelectedImage">
+
+                                            <i class="bi bi-x-lg"></i>
+
+                                        </button>
+                                    }
+
+                                </div>
+
+                            </div>
+                        }
+
+
+                        <!-- =================================================
+                             CURRENT IMAGE
+                             ================================================= -->
+                        @if (editingImage &&
+                                                     !string.IsNullOrWhiteSpace(formImageUrl))
+                        {
+                            <div class="col-12">
+
+                                <label class="form-label">
+                                    Current Image
+                                </label>
+
+                                <div class="current-image-container">
+
+                                    <img src="@formImageUrl"
+                                         alt="@formTitle"
+                                         class="current-image" />
+
+                                </div>
+
+                                @if (selectedImage == null)
+                                {
+                                    <div class="form-help mt-2">
+
+                                        <i class="bi bi-info-circle me-1"></i>
+
+                                        Select a new image above if you
+                                        want to replace the current image.
+
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+
+                        <!-- =================================================
+                             NEW IMAGE PREVIEW
+                             ================================================= -->
+                        @if (!string.IsNullOrWhiteSpace(previewUrl))
+                        {
+                            <div class="col-12">
+
+                                <label class="form-label">
+                                    New Image Preview
+                                </label>
+
+                                <div class="new-image-preview">
+
+                                    <img src="@previewUrl"
+                                         alt="New image preview" />
+
+                                </div>
+
+                            </div>
+                        }
+
+                    </div>
+
+                </div>
+
+
+                <!-- =========================================================
+                     FORM FOOTER
+                     ========================================================= -->
+
+                <div class="form-footer">
+
+                    <button type="button"
+                            class="btn btn-light"
+                            @onclick="CloseForm"
+                            disabled="@saving">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="SaveGalleryImageAsync"
+                            disabled="@saving">
+
+                        @if (uploadingImage)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2">
+                            </span>
+
+                            <span>
+                                Uploading image...
+                            </span>
+                        }
+                        else if (saving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2">
+                            </span>
+
+                            <span>
+                                Saving...
+                            </span>
+                        }
+                        else if (editingImage)
+                        {
+                            <i class="bi bi-check-lg me-2"></i>
+
+                            <span>
+                                Save Changes
+                            </span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-cloud-upload me-2"></i>
+
+                            <span>
+                                Upload Image
+                            </span>
+                        }
+
+                    </button>
+
+                </div>
+
+            </div>
+        }
+
+
+        <!-- =====================================================
+             GALLERY LIST
+             ===================================================== -->
+
+        <div class="gallery-card">
+
+            <!-- TOOLBAR -->
+
+            <div class="gallery-toolbar">
+
+                <div class="gallery-toolbar-title">
+
+                    <h5>
+                        Gallery Images
+                    </h5>
+
+                    <span>
+                        @FilteredGallery.Count() image(s)
+                    </span>
+
+                </div>
+
+
+                <div class="gallery-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Search images..."
+                           @bind="searchTerm"
+                           @bind:event="oninput" />
+
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <button type="button"
+                                class="search-clear"
+                                @onclick="ClearSearch">
+
+                            <i class="bi bi-x"></i>
+
+                        </button>
+                    }
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 LOADING
+                 ================================================= -->
+            @if (loading)
+            {
+                <div class="loading-state">
+
+                    <div class="spinner-border text-primary"
+                         role="status">
+                    </div>
+
+                    <h5>
+                        Loading gallery...
+                    </h5>
+
+                    <p>
+                        Please wait while the gallery is loaded.
+                    </p>
+
+                </div>
+            }
+
+            <!-- =================================================
+                 EMPTY
+                 ================================================= -->
+            @if (!FilteredGallery.Any())
+            {
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    <i class="bi bi-images"></i>
+                </div>
+
+                <h5>
+                    No gallery images found
+                </h5>
+
+                @if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    <p>
+                        There are currently no images in the gallery.
+                    </p>
+
+                    <button class="btn btn-primary"
+                            @onclick="OpenCreateForm">
+
+                        <i class="bi bi-plus-lg me-2"></i>
+
+                        Add First Image
+
+                    </button>
+                }
+                else
+                {
+                    <p>
+                        No images match your search.
+                    </p>
+
+                    <button class="btn btn-outline-secondary"
+                            @onclick="ClearSearch">
+
+                        Clear Search
+
+                    </button>
+                }
+
+            </div>
+            }
+
+            <!-- =================================================
+                 GALLERY GRID
+                 ================================================= -->
+            else
+            {
+            <div class="gallery-grid">
+
+                @foreach (var image in FilteredGallery)
+                {
+                    <div class="gallery-item">
+
+                        <!-- IMAGE -->
+
+                        <div class="gallery-image-wrapper">
+
+                            @if (!string.IsNullOrWhiteSpace(
+                                image.ImageUrl))
+                            {
+                                <img src="@image.ImageUrl"
+                                     alt="@image.Title"
+                                     class="gallery-image"
+                                     loading="lazy"
+                                     @onerror="() => HandleImageError(image)" />
+                            }
+                            else
+                            {
+                                <div class="broken-image">
+
+                                    <i class="bi bi-image"></i>
+
+                                    <span>
+                                        Image unavailable
+                                    </span>
+
+                                </div>
+                            }
+
+
+                            <!-- IMAGE ACTIONS -->
+
+                            <div class="gallery-overlay">
+
+                                <button type="button"
+                                        class="gallery-action edit"
+                                        title="Edit image"
+                                        @onclick="() => EditImage(image)">
+
+                                    <i class="bi bi-pencil"></i>
+
+                                </button>
+
+                                <button type="button"
+                                        class="gallery-action delete"
+                                        title="Delete image"
+                                        @onclick="() => DeleteImageAsync(image)">
+
+                                    <i class="bi bi-trash3"></i>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- IMAGE DETAILS -->
+
+                        <div class="gallery-item-details">
+
+                            <div class="gallery-item-title">
+
+                                <h6>
+                                    @(string.IsNullOrWhiteSpace(image.Title)
+                                        ? "Untitled Image"
+                                        : image.Title)
+                                </h6>
+
+                            </div>
+
+                            <div class="gallery-item-meta">
+
+                                <span>
+                                    <i class="bi bi-calendar3"></i>
+
+                                    @image.CreatedAt.ToString(
+                                        "dd MMM yyyy")
+                                </span>
+
+                                <span>
+                                    <i class="bi bi-cloud-check"></i>
+
+                                    Azure
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+            }
+
+        </div>
+
+    }
+
+</div>
+
+
+
 
 @code {
+
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    private List<Gallery> GalleryImages = new();
+
+
+    // =========================================================
+    // PAGE STATE
+    // =========================================================
+
+    private bool loading = true;
+
+    private bool saving = false;
+
+    private bool uploadingImage = false;
+
+    private bool showForm = false;
+
+    private bool editingImage = false;
+
+
+    // =========================================================
+    // MESSAGES
+    // =========================================================
+
+    private string errorMessage = string.Empty;
+
+    private string successMessage = string.Empty;
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private string searchTerm = string.Empty;
+
+
+    // =========================================================
+    // FORM
+    // =========================================================
+
+    private string formImageId = string.Empty;
+
+    private string formTitle = string.Empty;
+
+    private string formImageUrl = string.Empty;
+
+
+    // =========================================================
+    // FILE UPLOAD
+    // =========================================================
+
+    private IBrowserFile? selectedImage;
+
+    private string selectedImageName = string.Empty;
+
+    private string previewUrl = string.Empty;
+
+
+    // =========================================================
+    // FILTERED GALLERY
+    // =========================================================
+
+    private IEnumerable<Gallery> FilteredGallery =>
+        GalleryImages
+            .Where(image =>
+                string.IsNullOrWhiteSpace(searchTerm)
+                ||
+                (image.Title ?? string.Empty)
+                    .Contains(
+                        searchTerm,
+                        StringComparison.OrdinalIgnoreCase)
+                ||
+                (image.ImageUrl ?? string.Empty)
+                    .Contains(
+                        searchTerm,
+                        StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(
+                image => image.CreatedAt);
+
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGalleryAsync();
+    }
+
+
+    // =========================================================
+    // LOAD GALLERY
+    // =========================================================
+
+    private async Task LoadGalleryAsync()
+    {
+        loading = true;
+
+        errorMessage = string.Empty;
+
+        try
+        {
+            if (!AuthService.IsAdmin)
+            {
+                GalleryImages.Clear();
+
+                errorMessage =
+                    "Administrator access is required.";
+
+                return;
+            }
+
+            GalleryImages =
+                await AuthService.GetGalleryAsync()
+                ?? new List<Gallery>();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                GetFriendlyError(ex);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+
+    // =========================================================
+    // OPEN CREATE FORM
+    // =========================================================
+
+    private void OpenCreateForm()
+    {
+        ClearMessages();
+
+        ResetForm();
+
+        editingImage = false;
+
+        showForm = true;
+    }
+
+
+    // =========================================================
+    // EDIT IMAGE
+    // =========================================================
+
+    private void EditImage(Gallery image)
+    {
+        ClearMessages();
+
+        editingImage = true;
+
+        formImageId =
+            image.ImageId;
+
+        formTitle =
+            image.Title;
+
+        formImageUrl =
+            image.ImageUrl;
+
+        selectedImage = null;
+
+        selectedImageName =
+            string.Empty;
+
+        previewUrl =
+            string.Empty;
+
+        showForm = true;
+    }
+
+
+    // =========================================================
+    // IMAGE SELECTED
+    // =========================================================
+
+    private async Task HandleImageSelected(
+        InputFileChangeEventArgs e)
+    {
+        ClearMessages();
+
+        selectedImage =
+            e.File;
+
+        if (selectedImage == null)
+        {
+            return;
+        }
+
+        const long maxFileSize =
+            10 * 1024 * 1024;
+
+        if (selectedImage.Size > maxFileSize)
+        {
+            errorMessage =
+                "The selected image is larger than 10 MB.";
+
+            selectedImage = null;
+
+            selectedImageName =
+                string.Empty;
+
+            previewUrl =
+                string.Empty;
+
+            return;
+        }
+
+        var allowedTypes =
+            new[]
+            {
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp"
+            };
+
+        if (!allowedTypes.Contains(
+                selectedImage.ContentType,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            errorMessage =
+                "Only JPG, JPEG, PNG, GIF and WEBP images are allowed.";
+
+            selectedImage = null;
+
+            selectedImageName =
+                string.Empty;
+
+            previewUrl =
+                string.Empty;
+
+            return;
+        }
+
+        selectedImageName =
+            selectedImage.Name;
+
+        try
+        {
+            var previewStream =
+                selectedImage.OpenReadStream(
+                    maxFileSize);
+
+            using var memoryStream =
+                new MemoryStream();
+
+            await previewStream.CopyToAsync(
+                memoryStream);
+
+            var bytes =
+                memoryStream.ToArray();
+
+            previewUrl =
+                $"data:{selectedImage.ContentType};base64," +
+                Convert.ToBase64String(bytes);
+        }
+        catch (Exception ex)
+        {
+            selectedImage = null;
+
+            selectedImageName =
+                string.Empty;
+
+            previewUrl =
+                string.Empty;
+
+            errorMessage =
+                $"Unable to preview the selected image: {ex.Message}";
+        }
+    }
+
+
+    // =========================================================
+    // UPLOAD IMAGE TO AZURE
+    // =========================================================
+
+    private async Task<string> UploadImageAsync()
+    {
+        if (selectedImage == null)
+        {
+            throw new InvalidOperationException(
+                "Please select an image.");
+        }
+
+        const long maxFileSize =
+            10 * 1024 * 1024;
+
+        uploadingImage = true;
+
+        try
+        {
+            await using var stream =
+                selectedImage.OpenReadStream(
+                    maxFileSize);
+
+            var imageUrl =
+                await BlobStorageService.UploadFileAsync(
+                    stream,
+                    selectedImage.Name,
+                    selectedImage.ContentType,
+                    "gallery");
+
+            return imageUrl;
+        }
+        finally
+        {
+            uploadingImage = false;
+        }
+    }
+
+
+    // =========================================================
+    // SAVE GALLERY IMAGE
+    // =========================================================
+
+    private async Task SaveGalleryImageAsync()
+    {
+        ClearMessages();
+
+        if (string.IsNullOrWhiteSpace(formTitle))
+        {
+            errorMessage =
+                "Please enter an image title.";
+
+            return;
+        }
+
+        if (!editingImage &&
+            selectedImage == null)
+        {
+            errorMessage =
+                "Please select an image.";
+
+            return;
+        }
+
+        saving = true;
+
+        try
+        {
+            // =================================================
+            // EDIT EXISTING IMAGE
+            // =================================================
+
+            if (editingImage)
+            {
+                var oldImageUrl =
+                    formImageUrl;
+
+                var newImageUrl =
+                    formImageUrl;
+
+                // A new image was selected.
+                if (selectedImage != null)
+                {
+                    newImageUrl =
+                        await UploadImageAsync();
+                }
+
+                var gallery =
+                    new Gallery
+                    {
+                        ImageId =
+                            formImageId,
+
+                        Title =
+                            formTitle.Trim(),
+
+                        ImageUrl =
+                            newImageUrl
+                    };
+
+                // Update Firestore
+                await AuthService
+                    .UpdateGalleryImageAsync(
+                        gallery);
+
+                // If the image was replaced,
+                // remove the old Azure blob.
+                if (selectedImage != null &&
+                    !string.IsNullOrWhiteSpace(oldImageUrl) &&
+                    !string.Equals(
+                        oldImageUrl,
+                        newImageUrl,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        await BlobStorageService
+                            .DeleteFileAsync(
+                                oldImageUrl);
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        Console.WriteLine(
+                            $"Old Azure image could not be deleted: {deleteEx.Message}");
+                    }
+                }
+
+                successMessage =
+                    "Gallery image updated successfully.";
+            }
+
+            // =================================================
+            // CREATE NEW IMAGE
+            // =================================================
+
+            else
+            {
+                var imageUrl =
+                    await UploadImageAsync();
+
+                var gallery =
+                    new Gallery
+                    {
+                        Title =
+                            formTitle.Trim(),
+
+                        ImageUrl =
+                            imageUrl,
+
+                        CreatedAt =
+                            DateTime.Now
+                    };
+
+                try
+                {
+                    // Save URL in Firestore
+                    await AuthService
+                        .CreateGalleryImageAsync(
+                            gallery);
+                }
+                catch
+                {
+                    // If Firestore fails after Azure upload,
+                    // attempt to clean up the uploaded blob.
+                    try
+                    {
+                        await BlobStorageService
+                            .DeleteFileAsync(
+                                imageUrl);
+                    }
+                    catch
+                    {
+                        // Do not hide the original Firestore error.
+                    }
+
+                    throw;
+                }
+
+                successMessage =
+                    "Gallery image uploaded successfully.";
+            }
+
+            showForm = false;
+
+            ResetForm();
+
+            await LoadGalleryAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                GetFriendlyError(ex);
+        }
+        finally
+        {
+            saving = false;
+
+            uploadingImage = false;
+        }
+    }
+
+
+    // =========================================================
+    // DELETE IMAGE
+    // =========================================================
+
+    private async Task DeleteImageAsync(
+        Gallery image)
+    {
+        ClearMessages();
+
+        var confirmed =
+            await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Delete '{image.Title}' from the gallery? " +
+                "This will also delete the image from Azure Blob Storage.");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        try
+        {
+            // =================================================
+            // DELETE AZURE IMAGE
+            // =================================================
+
+            if (!string.IsNullOrWhiteSpace(
+                image.ImageUrl))
+            {
+                await BlobStorageService
+                    .DeleteFileAsync(
+                        image.ImageUrl);
+            }
+
+            // =================================================
+            // DELETE FIRESTORE DOCUMENT
+            // =================================================
+
+            await AuthService
+                .DeleteGalleryImageAsync(
+                    image.ImageId);
+
+            GalleryImages.Remove(image);
+
+            successMessage =
+                "Gallery image deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                GetFriendlyError(ex);
+        }
+    }
+
+
+    // =========================================================
+    // CLEAR SELECTED IMAGE
+    // =========================================================
+
+    private void ClearSelectedImage()
+    {
+        selectedImage = null;
+
+        selectedImageName =
+            string.Empty;
+
+        previewUrl =
+            string.Empty;
+    }
+
+
+    // =========================================================
+    // CLOSE FORM
+    // =========================================================
+
+    private void CloseForm()
+    {
+        if (saving)
+        {
+            return;
+        }
+
+        showForm = false;
+
+        ResetForm();
+
+        ClearMessages();
+    }
+
+
+    // =========================================================
+    // RESET FORM
+    // =========================================================
+
+    private void ResetForm()
+    {
+        formImageId =
+            string.Empty;
+
+        formTitle =
+            string.Empty;
+
+        formImageUrl =
+            string.Empty;
+
+        selectedImage = null;
+
+        selectedImageName =
+            string.Empty;
+
+        previewUrl =
+            string.Empty;
+    }
+
+
+    // =========================================================
+    // CLEAR SEARCH
+    // =========================================================
+
+    private void ClearSearch()
+    {
+        searchTerm =
+            string.Empty;
+    }
+
+
+    // =========================================================
+    // CLEAR MESSAGES
+    // =========================================================
+
+    private void ClearMessages()
+    {
+        errorMessage =
+            string.Empty;
+
+        successMessage =
+            string.Empty;
+    }
+
+
+    // =========================================================
+    // IMAGE ERROR
+    // =========================================================
+
+    private void HandleImageError(
+        Gallery image)
+    {
+        Console.WriteLine(
+            $"Unable to load image: {image.ImageUrl}");
+    }
+
+
+    // =========================================================
+    // FILE SIZE
+    // =========================================================
+
+    private string FormatFileSize(
+        long bytes)
+    {
+        if (bytes < 1024)
+        {
+            return $"{bytes} B";
+        }
+
+        if (bytes < 1024 * 1024)
+        {
+            return $"{bytes / 1024.0:F1} KB";
+        }
+
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+
+    // =========================================================
+    // FRIENDLY FIREBASE / STORAGE ERRORS
+    // =========================================================
+
+    private string GetFriendlyError(
+        Exception ex)
+    {
+        var message =
+            ex.Message;
+
+        if (message.Contains(
+            "Missing or insufficient permissions",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Firebase denied this operation. " +
+                "Check your Firestore Security Rules " +
+                "and make sure the logged-in account is an administrator.";
+        }
+
+        if (message.Contains(
+            "You must be logged in",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                "Your Firebase session is no longer available. " +
+                "Please log in again.";
+        }
+
+        if (message.Contains(
+            "Azure",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return
+                $"Azure image storage error: {message}";
+        }
+
+        return message;
+    }
 
 }

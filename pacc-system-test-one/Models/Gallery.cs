@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace pacc_system_test_one.Models
+﻿namespace pacc_system_test_one.Models
 {
     public class Gallery
     {
-        public int ImageId { get; set; }
+        public string ImageId { get; set; } = string.Empty;
 
-        public string Title { get; set; } = "";
+        public string Title { get; set; } = string.Empty;
 
-        public string ImageUrl { get; set; } = "";
+        public string ImageUrl { get; set; } = string.Empty;
+
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

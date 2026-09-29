@@ -25,6 +25,7 @@ namespace pacc_system_test_one
             // Blazor authentication/authorization support
             builder.Services.AddAuthorizationCore();
             builder.Services.AddScoped<FirebaseAuthService>();
+            builder.Services.AddScoped<IBlobStorageService, ImageStorageService>();
             return builder.Build();
         }
     }
