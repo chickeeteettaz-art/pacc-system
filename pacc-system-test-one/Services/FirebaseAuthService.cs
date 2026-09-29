@@ -443,6 +443,88 @@ namespace pacc_system_test_one.Services
                 donationId);
         }
 
+        //Gallery 
+
+        public async Task<List<Gallery>> GetGalleryAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var gallery =
+                    await _jsRuntime.InvokeAsync<List<Gallery>>(
+                        "firebaseAuth.getGallery");
+
+                return gallery ?? new List<Gallery>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getGallery error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+        public async Task CreateGalleryImageAsync(Gallery gallery)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.createGalleryImage",
+                    gallery.Title,
+                    gallery.ImageUrl);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase createGalleryImage error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+        public async Task UpdateGalleryImageAsync(Gallery gallery)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateGalleryImage",
+                    gallery.ImageId,
+                    gallery.Title,
+                    gallery.ImageUrl);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updateGalleryImage error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+        public async Task DeleteGalleryImageAsync(string imageId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteGalleryImage",
+                    imageId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteGalleryImage error: {ex.Message}");
+
+                throw;
+            }
+        }
         // =====================================================
         // LOGOUT
         // =====================================================

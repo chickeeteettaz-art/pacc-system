@@ -906,6 +906,143 @@ window.firebaseAuth.deleteDonation = async function (donationId) {
 
     return true;
 };
+
+
+//==================================
+//Gallery
+//==================================
+window.firebaseAuth.getGallery = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot =
+        await getDocs(
+            collection(db, "gallery")
+        );
+
+    const gallery = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data =
+            documentSnapshot.data();
+
+        gallery.push({
+            imageId: documentSnapshot.id,
+
+            title: data.title || "",
+
+            imageUrl: data.imageUrl || "",
+
+            createdAt:
+                data.createdAt ||
+                new Date().toISOString()
+        });
+
+    });
+
+    gallery.sort(
+        (a, b) =>
+            new Date(b.createdAt) -
+            new Date(a.createdAt)
+    );
+
+    return gallery;
+};
+
+window.firebaseAuth.createGalleryImage =
+    async function (
+        title,
+        imageUrl
+    ) {
+
+        if (!auth.currentUser) {
+            throw new Error(
+                "You must be logged in."
+            );
+        }
+
+        if (!title || title.trim() === "") {
+            throw new Error(
+                "Gallery title is required."
+            );
+        }
+
+        if (!imageUrl || imageUrl.trim() === "") {
+            throw new Error(
+                "Image URL is required."
+            );
+        }
+
+        await addDoc(
+            collection(db, "gallery"),
+            {
+                title: title.trim(),
+
+                imageUrl: imageUrl.trim(),
+
+                createdAt:
+                    new Date().toISOString()
+            }
+        );
+
+        return true;
+    };
+
+window.firebaseAuth.updateGalleryImage =
+    async function (
+        imageId,
+        title,
+        imageUrl
+    ) {
+
+        if (!auth.currentUser) {
+            throw new Error(
+                "You must be logged in."
+            );
+        }
+
+        if (!imageId) {
+            throw new Error(
+                "Image ID is required."
+            );
+        }
+
+        await updateDoc(
+            doc(db, "gallery", imageId),
+            {
+                title: title.trim(),
+
+                imageUrl: imageUrl.trim()
+            }
+        );
+
+        return true;
+    };
+
+window.firebaseAuth.deleteGalleryImage =
+    async function (imageId) {
+
+        if (!auth.currentUser) {
+            throw new Error(
+                "You must be logged in."
+            );
+        }
+
+        if (!imageId) {
+            throw new Error(
+                "Image ID is required."
+            );
+        }
+
+        await deleteDoc(
+            doc(db, "gallery", imageId)
+        );
+
+        return true;
+    };
     </script>
 
 
