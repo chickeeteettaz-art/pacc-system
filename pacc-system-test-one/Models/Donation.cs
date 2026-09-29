@@ -1,23 +1,19 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace pacc_system_test_one.Models
+﻿namespace pacc_system_test_one.Models
 {
     public class Donation
     {
-        public int DonationId { get; set; }
+        public string DonationId { get; set; } = string.Empty;
 
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
 
-        public DateTime Date { get; set; }
+        public DateTime Date { get; set; } = DateTime.Now;
 
-        public string DonorName { get; set; } = "";
+        public string DonorName { get; set; } = string.Empty;
 
-        public string GivingType { get; set; } = "";
+        public string GivingType { get; set; } = "General";
 
-        public string PaymentMethod { get; set; } = "";
+        public string PaymentMethod { get; set; } = "Cash";
     }
 }

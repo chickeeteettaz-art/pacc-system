@@ -394,7 +394,54 @@ namespace pacc_system_test_one.Services
                 throw;
             }
         }
+        public async Task<List<Donation>> GetDonationsAsync()
+        {
+            await WaitForFirebaseAsync();
 
+            var donations =
+                await _jsRuntime.InvokeAsync<List<Donation>>(
+                    "firebaseAuth.getDonations");
+
+            return donations ?? new List<Donation>();
+        }
+
+        public async Task CreateDonationAsync(Donation donation)
+        {
+            await WaitForFirebaseAsync();
+
+            await _jsRuntime.InvokeVoidAsync(
+                "firebaseAuth.createDonation",
+                donation.UserId,
+                donation.Amount,
+                donation.Date,
+                donation.DonorName,
+                donation.GivingType,
+                donation.PaymentMethod);
+        }
+
+        public async Task UpdateDonationAsync(Donation donation)
+        {
+            await WaitForFirebaseAsync();
+
+            await _jsRuntime.InvokeVoidAsync(
+                "firebaseAuth.updateDonation",
+                donation.DonationId,
+                donation.UserId,
+                donation.Amount,
+                donation.Date,
+                donation.DonorName,
+                donation.GivingType,
+                donation.PaymentMethod);
+        }
+
+        public async Task DeleteDonationAsync(string donationId)
+        {
+            await WaitForFirebaseAsync();
+
+            await _jsRuntime.InvokeVoidAsync(
+                "firebaseAuth.deleteDonation",
+                donationId);
+        }
 
         // =====================================================
         // LOGOUT
