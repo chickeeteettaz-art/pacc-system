@@ -1043,6 +1043,123 @@ window.firebaseAuth.deleteGalleryImage =
 
         return true;
     };
+
+
+//==========================
+//messages
+//=======================
+window.firebaseAuth.getMessages = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot =
+        await getDocs(
+            collection(db, "messages")
+        );
+
+    const messages = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data =
+            documentSnapshot.data();
+
+        let messageId =
+            parseInt(documentSnapshot.id);
+
+        if (isNaN(messageId)) {
+            messageId = 0;
+        }
+
+
+        let messageDate = null;
+
+        if (data.date) {
+
+            if (typeof data.date.toDate === "function") {
+
+                messageDate =
+                    data.date.toDate().toISOString();
+
+            } else {
+
+                messageDate =
+                    data.date;
+            }
+        }
+
+
+        messages.push({
+
+            messageId: messageId,
+
+            userId:
+                Number(data.userId || 0),
+
+            title:
+                data.title || "",
+
+            content:
+                data.content || "",
+
+            date:
+                messageDate,
+
+            userName:
+                data.userName || "",
+
+            isRead:
+                data.isRead === true
+
+        });
+
+    });
+
+
+    return messages;
+};
+window.firebaseAuth.markMessageAsRead = async function (messageId) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const messageRef =
+        doc(
+            db,
+            "messages",
+            messageId.toString()
+        );
+
+    await updateDoc(
+        messageRef,
+        {
+            isRead: true
+        }
+    );
+
+    return true;
+};
+
+window.firebaseAuth.deleteMessage = async function (messageId) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const messageRef =
+        doc(
+            db,
+            "messages",
+            messageId.toString()
+        );
+
+    await deleteDoc(messageRef);
+
+    return true;
+};
     </script>
 
 
