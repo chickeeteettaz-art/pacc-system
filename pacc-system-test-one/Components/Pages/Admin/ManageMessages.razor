@@ -1,5 +1,963 @@
-﻿<h3>ManageMessages</h3>
+﻿@page "/admin/messages"
+@layout AdminLayout
+
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IJSRuntime JS
+
+<PageTitle>Manage Messages</PageTitle>
+
+<div class="messages-page">
+
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
+
+    <div class="page-header messages-page-header">
+
+        <div>
+
+            <div class="breadcrumb">
+                <span>Administration</span>
+                <i class="bi bi-chevron-right"></i>
+                <span>Messages</span>
+            </div>
+
+            <h1 class="page-title">
+                Messages
+            </h1>
+
+            <p class="page-description">
+                View and manage messages submitted by members of the church.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- ALERTS -->
+    <!-- ===================================================== -->
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="message-alert success-alert">
+
+            <i class="bi bi-check-circle-fill"></i>
+
+            <div>
+                <strong>Success</strong>
+                <span>@SuccessMessage</span>
+            </div>
+
+            <button type="button"
+                    @onclick="ClearMessages">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+    }
+
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="message-alert error-alert">
+
+            <i class="bi bi-exclamation-circle-fill"></i>
+
+            <div>
+                <strong>Error</strong>
+                <span>@ErrorMessage</span>
+            </div>
+
+            <button type="button"
+                    @onclick="ClearMessages">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- STATISTICS -->
+    <!-- ===================================================== -->
+
+    <div class="message-stats">
+
+        <div class="message-stat-card">
+
+            <div class="message-stat-icon blue">
+                <i class="bi bi-envelope"></i>
+            </div>
+
+            <div>
+                <span>Total Messages</span>
+                <strong>@Messages.Count</strong>
+            </div>
+
+        </div>
+
+
+        <div class="message-stat-card">
+
+            <div class="message-stat-icon orange">
+                <i class="bi bi-envelope-exclamation"></i>
+            </div>
+
+            <div>
+                <span>Unread</span>
+                <strong>@UnreadCount</strong>
+            </div>
+
+        </div>
+
+
+        <div class="message-stat-card">
+
+            <div class="message-stat-icon green">
+                <i class="bi bi-envelope-open"></i>
+            </div>
+
+            <div>
+                <span>Read</span>
+                <strong>@ReadCount</strong>
+            </div>
+
+        </div>
+
+
+        <div class="message-stat-card">
+
+            <div class="message-stat-icon purple">
+                <i class="bi bi-chat-left-text"></i>
+            </div>
+
+            <div>
+                <span>Showing</span>
+                <strong>@FilteredMessages.Count</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- MAIN CONTENT -->
+    <!-- ===================================================== -->
+
+    <div class="messages-card">
+
+        <!-- TOOLBAR -->
+
+        <div class="messages-toolbar">
+
+            <div class="toolbar-title">
+
+                <h2>
+                    User Messages
+                </h2>
+
+                <p>
+                    Messages received from church members and users.
+                </p>
+
+            </div>
+
+
+            <div class="toolbar-controls">
+
+                <!-- SEARCH -->
+
+                <div class="message-search">
+
+                    <i class="bi bi-search"></i>
+
+                    <input type="text"
+                           placeholder="Search messages..."
+                           value="@SearchTerm"
+                           @oninput="HandleSearch" />
+
+                    @if (!string.IsNullOrWhiteSpace(SearchTerm))
+                    {
+                        <button type="button"
+                                @onclick="ClearSearch">
+
+                            <i class="bi bi-x"></i>
+
+                        </button>
+                    }
+
+                </div>
+
+
+                <!-- FILTER -->
+
+                <div class="message-filter">
+
+                    <select @bind="SelectedFilter">
+
+                        <option value="All">
+                            All Messages
+                        </option>
+
+                        <option value="Unread">
+                            Unread
+                        </option>
+
+                        <option value="Read">
+                            Read
+                        </option>
+
+                    </select>
+
+                    <i class="bi bi-chevron-down"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- LOADING -->
+        <!-- ================================================= -->
+        @if (IsLoading)
+        {
+            <div class="messages-loading">
+
+                <div class="spinner-border text-primary"
+                     role="status">
+                </div>
+
+                <h3>
+                    Loading messages...
+                </h3>
+
+                <p>
+                    Retrieving messages from the database.
+                </p>
+
+            </div>
+        }
+
+
+        <!-- ================================================= -->
+        <!-- EMPTY -->
+        <!-- ================================================= -->
+        @if (!FilteredMessages.Any())
+        {
+        <div class="messages-empty">
+
+            <div class="empty-icon">
+
+                <i class="bi bi-envelope-open"></i>
+
+            </div>
+
+
+            @if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                <h3>
+                    No messages found
+                </h3>
+
+                <p>
+                    No messages match your search.
+                </p>
+
+                <button class="btn btn-outline-primary"
+                        @onclick="ClearSearch">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+
+                    Clear Search
+
+                </button>
+            }
+            else
+            {
+                <h3>
+                    No messages
+                </h3>
+
+                <p>
+                    There are currently no messages from users.
+                </p>
+            }
+
+        </div>
+        }
+
+
+        <!-- ================================================= -->
+        <!-- MESSAGES TABLE -->
+        <!-- ================================================= -->
+        @if (FilteredMessages.Any())
+        {
+        <div class="messages-table-container">
+
+            <table class="messages-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th class="status-column">
+                        </th>
+
+                        <th>
+                            Sender
+                        </th>
+
+                        <th>
+                            Subject
+                        </th>
+
+                        <th>
+                            Message
+                        </th>
+
+                        <th>
+                            Date
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th class="actions-column">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    @foreach (var message in FilteredMessages)
+                    {
+                        <tr class="@(!message.IsRead ? "unread-row" : "")">
+
+
+                            <!-- STATUS DOT -->
+
+                            <td class="status-column">
+
+                                @if (!message.IsRead)
+                                {
+                                    <span class="unread-dot"></span>
+                                }
+
+                            </td>
+
+
+                            <!-- USER -->
+
+                            <td>
+
+                                <div class="sender-cell">
+
+                                    <div class="sender-avatar">
+                                        @GetInitials(message.UserName)
+                                    </div>
+
+                                    <div class="sender-details">
+
+                                        <strong>
+                                            @(string.IsNullOrWhiteSpace(message.UserName)
+                                                ? "Unknown User"
+                                                : message.UserName)
+                                        </strong>
+
+                                        <span>
+                                            User ID: @message.UserId
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- TITLE -->
+
+                            <td>
+
+                                <div class="message-subject">
+
+                                    <strong>
+                                        @message.Title
+                                    </strong>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- CONTENT PREVIEW -->
+
+                            <td>
+
+                                <div class="message-preview">
+
+                                    @GetPreview(message.Content)
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- DATE -->
+
+                            <td>
+
+                                <div class="message-date">
+
+                                    <strong>
+                                        @message.Date.ToLocalTime().ToString("dd MMM yyyy")
+                                    </strong>
+
+                                    <span>
+                                        @message.Date.ToLocalTime().ToString("HH:mm")
+                                    </span>
+
+                                </div>
+
+                            </td>
+
+
+                            <!-- STATUS -->
+
+                            <td>
+
+                                @if (message.IsRead)
+                                {
+                                    <span class="status-badge read">
+
+                                        <i class="bi bi-envelope-open"></i>
+
+                                        Read
+
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge unread">
+
+                                        <i class="bi bi-envelope"></i>
+
+                                        Unread
+
+                                    </span>
+                                }
+
+                            </td>
+
+
+                            <!-- ACTIONS -->
+
+                            <td>
+
+                                <div class="message-actions">
+
+                                    <button type="button"
+                                            class="table-action view"
+                                            title="View message"
+                                            @onclick="() => OpenMessage(message)">
+
+                                        <i class="bi bi-eye"></i>
+
+                                    </button>
+
+
+                                    @if (!message.IsRead)
+                                    {
+                                        <button type="button"
+                                                class="table-action read"
+                                                title="Mark as read"
+                                                @onclick="() => MarkAsReadAsync(message)">
+
+                                            <i class="bi bi-envelope-open"></i>
+
+                                        </button>
+                                    }
+
+
+                                    <button type="button"
+                                            class="table-action delete"
+                                            title="Delete message"
+                                            @onclick="() => DeleteMessageAsync(message)">
+
+                                        <i class="bi bi-trash3"></i>
+
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+        }
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- MESSAGE VIEW MODAL -->
+<!-- ========================================================= -->
+@if (ShowMessageModal && SelectedMessage != null)
+{
+    <div class="message-modal-backdrop"
+         @onclick="CloseMessage">
+
+        <div class="message-modal"
+             @onclick:stopPropagation="true">
+
+
+            <!-- MODAL HEADER -->
+
+            <div class="message-modal-header">
+
+                <div class="modal-sender">
+
+                    <div class="modal-avatar">
+                        @GetInitials(SelectedMessage.UserName)
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            @(string.IsNullOrWhiteSpace(SelectedMessage.UserName)
+                                ? "Unknown User"
+                                : SelectedMessage.UserName)
+                        </strong>
+
+                        <span>
+                            @SelectedMessage.Date.ToLocalTime()
+                            .ToString("dd MMM yyyy, HH:mm")
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button type="button"
+                        class="modal-close-button"
+                        @onclick="CloseMessage">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- MODAL BODY -->
+
+            <div class="message-modal-body">
+
+                <div class="message-detail-label">
+                    Subject
+                </div>
+
+                <h2 class="message-detail-title">
+                    @SelectedMessage.Title
+                </h2>
+
+
+                <div class="message-detail-divider"></div>
+
+
+                <div class="message-detail-label">
+                    Message
+                </div>
+
+                <div class="message-full-content">
+
+                    @SelectedMessage.Content
+
+                </div>
+
+            </div>
+
+
+            <!-- MODAL FOOTER -->
+
+            <div class="message-modal-footer">
+
+                @if (!SelectedMessage.IsRead)
+                {
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="() => MarkAsReadFromModalAsync(SelectedMessage)">
+
+                        <i class="bi bi-envelope-open"></i>
+
+                        Mark as Read
+
+                    </button>
+                }
+
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        @onclick="() => DeleteMessageFromModalAsync(SelectedMessage)">
+
+                    <i class="bi bi-trash3"></i>
+
+                    Delete
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-light"
+                        @onclick="CloseMessage">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
 
 @code {
 
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    private List<Message> Messages = new();
+
+    private Message? SelectedMessage;
+
+
+    // =========================================================
+    // STATE
+    // =========================================================
+
+    private bool IsLoading = true;
+
+    private bool ShowMessageModal;
+
+    private string SearchTerm = string.Empty;
+
+    private string SelectedFilter = "All";
+
+    private string? SuccessMessage;
+
+    private string? ErrorMessage;
+
+
+    // =========================================================
+    // FILTERED MESSAGES
+    // =========================================================
+
+    private List<Message> FilteredMessages
+    {
+        get
+        {
+            IEnumerable<Message> query = Messages;
+
+
+            // Filter by status
+
+            if (SelectedFilter == "Unread")
+            {
+                query = query.Where(x => !x.IsRead);
+            }
+            else if (SelectedFilter == "Read")
+            {
+                query = query.Where(x => x.IsRead);
+            }
+
+
+            // Search
+
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                query = query.Where(x =>
+                    (x.Title ?? "")
+                        .Contains(
+                            SearchTerm,
+                            StringComparison.OrdinalIgnoreCase)
+                    ||
+                    (x.Content ?? "")
+                        .Contains(
+                            SearchTerm,
+                            StringComparison.OrdinalIgnoreCase)
+                    ||
+                    (x.UserName ?? "")
+                        .Contains(
+                            SearchTerm,
+                            StringComparison.OrdinalIgnoreCase)
+                );
+            }
+
+
+            return query
+                .OrderByDescending(x => x.Date)
+                .ToList();
+        }
+    }
+
+
+    // =========================================================
+    // STATISTICS
+    // =========================================================
+
+    private int UnreadCount =>
+        Messages.Count(x => !x.IsRead);
+
+
+    private int ReadCount =>
+        Messages.Count(x => x.IsRead);
+
+
+    // =========================================================
+    // INITIALIZE
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMessagesAsync();
+    }
+
+
+    // =========================================================
+    // LOAD
+    // =========================================================
+
+    private async Task LoadMessagesAsync()
+    {
+        IsLoading = true;
+
+        ClearMessages();
+
+        try
+        {
+            Messages =
+                await AuthService.GetMessagesAsync()
+                ?? new List<Message>();
+
+            Messages =
+                Messages
+                    .OrderByDescending(x => x.Date)
+                    .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Load messages error: {ex.Message}");
+
+            ErrorMessage =
+                "Unable to load messages. Please try again.";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private void HandleSearch(ChangeEventArgs e)
+    {
+        SearchTerm =
+            e.Value?.ToString() ?? string.Empty;
+    }
+
+
+    private void ClearSearch()
+    {
+        SearchTerm = string.Empty;
+    }
+
+
+    // =========================================================
+    // OPEN MESSAGE
+    // =========================================================
+
+    private async Task OpenMessage(Message message)
+    {
+        SelectedMessage = message;
+
+        ShowMessageModal = true;
+
+        if (!message.IsRead)
+        {
+            await MarkAsReadAsync(message);
+        }
+    }
+
+
+    private void CloseMessage()
+    {
+        ShowMessageModal = false;
+        SelectedMessage = null;
+    }
+
+
+    // =========================================================
+    // MARK AS READ
+    // =========================================================
+
+    private async Task MarkAsReadAsync(Message message)
+    {
+        try
+        {
+            await AuthService.MarkMessageAsReadAsync(
+                Convert.ToInt32(message.MessageId));
+
+            message.IsRead = true;
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Mark message read error: {ex.Message}");
+
+            ErrorMessage =
+                "Unable to mark the message as read.";
+        }
+    }
+
+
+    private async Task MarkAsReadFromModalAsync(
+        Message message)
+    {
+        await MarkAsReadAsync(message);
+
+        SuccessMessage =
+            "Message marked as read.";
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private async Task DeleteMessageAsync(
+        Message message)
+    {
+        try
+        {
+            var confirmed =
+                await JS.InvokeAsync<bool>(
+                    "confirm",
+                    $"Are you sure you want to delete the message \"{message.Title}\"?");
+
+            if (!confirmed)
+                return;
+
+
+            await AuthService.DeleteMessageAsync(
+                Convert.ToInt32(message.MessageId));
+
+
+            Messages.Remove(message);
+
+
+            if (SelectedMessage?.MessageId ==
+                message.MessageId)
+            {
+                CloseMessage();
+            }
+
+
+            SuccessMessage =
+                "Message deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Delete message error: {ex.Message}");
+
+            ErrorMessage =
+                "Unable to delete the message.";
+        }
+    }
+
+
+    private async Task DeleteMessageFromModalAsync(
+        Message message)
+    {
+        await DeleteMessageAsync(message);
+    }
+
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private static string GetPreview(
+        string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No message content";
+
+        content = content.Trim();
+
+        if (content.Length <= 75)
+            return content;
+
+        return content.Substring(0, 75) + "...";
+    }
+
+
+    private static string GetInitials(
+        string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "?";
+
+        var parts =
+            name.Trim()
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 1)
+        {
+            return parts[0]
+                .Substring(0, 1)
+                .ToUpper();
+        }
+
+        return $"{parts[0][0]}{parts[^1][0]}"
+            .ToUpper();
+    }
+
+
+    private void ClearMessages()
+    {
+        SuccessMessage = null;
+        ErrorMessage = null;
+    }
 }

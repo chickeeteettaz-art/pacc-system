@@ -525,6 +525,69 @@ namespace pacc_system_test_one.Services
                 throw;
             }
         }
+
+        public async Task<List<Message>> GetMessagesAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var result =
+                    await _jsRuntime.InvokeAsync<List<Message>>(
+                        "firebaseAuth.getMessages");
+
+                return result ?? new List<Message>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getMessages error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task MarkMessageAsReadAsync(
+            int messageId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.markMessageAsRead",
+                    messageId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase markMessageAsRead error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task DeleteMessageAsync(
+            int messageId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteMessage",
+                    messageId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteMessage error: {ex.Message}");
+
+                throw;
+            }
+        }
         // =====================================================
         // LOGOUT
         // =====================================================
