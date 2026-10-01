@@ -1,5 +1,738 @@
-﻿<h3>ManagePrayerRequests</h3>
+﻿@page "/admin/prayer-requests"
+@layout AdminLayout
+
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IJSRuntime JS
+
+<div class="prayer-admin-page">
+
+    <!-- HEADER -->
+    <div class="prayer-page-header">
+
+        <div class="prayer-header-content">
+
+            <div class="breadcrumb">
+                <span>Administration</span>
+                <i class="bi bi-chevron-right"></i>
+                <span>Prayer Requests</span>
+            </div>
+
+            <div class="title-row">
+
+                <div class="title-icon">
+                    <i class="bi bi-heart"></i>
+                </div>
+
+                <div>
+                    <h1>Prayer Requests</h1>
+
+                    <p>
+                        Review and manage prayer requests
+                        submitted by members.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ERROR -->
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="prayer-alert prayer-alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill"></i>
+
+            <span>@ErrorMessage</span>
+
+            <button type="button"
+                    class="alert-close"
+                    @onclick="ClearError">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+    }
+
+
+    <!-- SUCCESS -->
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="prayer-alert prayer-alert-success">
+
+            <i class="bi bi-check-circle-fill"></i>
+
+            <span>@SuccessMessage</span>
+
+            <button type="button"
+                    class="alert-close"
+                    @onclick="ClearSuccess">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+        </div>
+    }
+
+
+    <!-- STATISTICS -->
+    <div class="prayer-stat-grid">
+
+        <div class="prayer-stat-card">
+
+            <div class="stat-icon blue">
+                <i class="bi bi-inbox"></i>
+            </div>
+
+            <div class="stat-content">
+
+                <span>Total Requests</span>
+
+                <strong>@PrayerRequests.Count</strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="prayer-stat-card">
+
+            <div class="stat-icon orange">
+                <i class="bi bi-clock"></i>
+            </div>
+
+            <div class="stat-content">
+
+                <span>Pending</span>
+
+                <strong>@PendingCount</strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="prayer-stat-card">
+
+            <div class="stat-icon green">
+                <i class="bi bi-check-circle"></i>
+            </div>
+
+            <div class="stat-content">
+
+                <span>Answered</span>
+
+                <strong>@AnsweredCount</strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="prayer-stat-card">
+
+            <div class="stat-icon red">
+                <i class="bi bi-x-circle"></i>
+            </div>
+
+            <div class="stat-content">
+
+                <span>Rejected</span>
+
+                <strong>@RejectedCount</strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TOOLBAR -->
+    <div class="prayer-toolbar">
+
+        <div class="search-wrapper">
+
+            <i class="bi bi-search"></i>
+
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search prayer requests..."
+                   @bind="SearchTerm"
+                   @bind:event="oninput" />
+
+            @if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                <button type="button"
+                        class="clear-search"
+                        @onclick="ClearSearch">
+                    <i class="bi bi-x"></i>
+                </button>
+            }
+
+        </div>
+
+
+        <div class="filter-wrapper">
+
+            <i class="bi bi-funnel"></i>
+
+            <select class="filter-select"
+                    @bind="SelectedStatus">
+
+                <option value="All">
+                    All Statuses
+                </option>
+
+                <option value="Pending">
+                    Pending
+                </option>
+
+                <option value="Approved">
+                    Approved
+                </option>
+
+                <option value="Answered">
+                    Answered
+                </option>
+
+                <option value="Rejected">
+                    Rejected
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <button type="button"
+                class="refresh-button"
+                @onclick="LoadPrayerRequestsAsync"
+                disabled="@IsLoading">
+
+            <i class="bi bi-arrow-clockwise @(IsLoading ? "spin" : "")"></i>
+
+            Refresh
+
+        </button>
+
+    </div>
+
+
+    <!-- LOADING -->
+    @if (IsLoading)
+    {
+        <div class="prayer-loading">
+
+            <div class="spinner-border"></div>
+
+            <p>Loading prayer requests...</p>
+
+        </div>
+    }
+
+    <!-- EMPTY -->
+    @if (!FilteredPrayerRequests.Any())
+    {
+        <div class="prayer-empty">
+
+            <div class="empty-icon">
+                <i class="bi bi-heart"></i>
+            </div>
+
+            <h3>
+                @if (PrayerRequests.Any())
+                {
+                    <text>No matching prayer requests</text>
+                }
+                else
+                {
+                    <text>No prayer requests yet</text>
+                }
+            </h3>
+
+            <p>
+                @if (PrayerRequests.Any())
+                {
+                    <text>Try changing your search or status filter.</text>
+                }
+                else
+                {
+                    <text>Prayer requests submitted by members will appear here.</text>
+                }
+            </p>
+
+        </div>
+    }
+
+    <!-- REQUEST LIST -->
+    @if (FilteredPrayerRequests.Any())
+    {
+        <div class="prayer-request-list">
+
+            @foreach (var request in FilteredPrayerRequests)
+            {
+                <div class="prayer-request-card">
+
+                    <!-- CARD HEADER -->
+                    <div class="request-card-header">
+
+                        <div class="request-user">
+
+                            <div class="user-avatar">
+                                @GetInitials(request.UserName)
+                            </div>
+
+                            <div class="user-details">
+
+                                <strong>
+                                    @request.UserName
+                                </strong>
+
+                                <span>
+                                    <i class="bi bi-calendar3"></i>
+                                    @request.Date.ToString("dd MMM yyyy, HH:mm")
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="request-actions">
+
+                            <span class="@GetStatusClass(request.Status)">
+                                @request.Status
+                            </span>
+
+                            <div class="dropdown">
+
+                                <button class="action-button"
+                                        type="button"
+                                        data-bs-toggle="dropdown">
+
+                                    <i class="bi bi-three-dots-vertical"></i>
+
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+
+                                    <li>
+                                        <button class="dropdown-item"
+                                                @onclick='() => SetStatusAsync(request, "Approved")'>
+
+                                            <i class="bi bi-check-circle me-2"></i>
+
+                                            Approve
+
+                                        </button>
+                                    </li>
+
+                                    <li>
+                                        <button class="dropdown-item"
+                                                @onclick='() => SetStatusAsync(request, "Answered")'>
+
+                                            <i class="bi bi-check2-all me-2"></i>
+
+                                            Mark Answered
+
+                                        </button>
+                                    </li>
+
+                                    <li>
+                                        <button class="dropdown-item"
+                                                @onclick='() => SetStatusAsync(request, "Pending")'>
+
+                                            <i class="bi bi-clock me-2"></i>
+
+                                            Mark Pending
+
+                                        </button>
+                                    </li>
+
+                                    <li>
+                                        <button class="dropdown-item"
+                                                @onclick='() => SetStatusAsync(request, "Rejected")'>
+
+                                            <i class="bi bi-x-circle me-2"></i>
+
+                                            Reject
+
+                                        </button>
+                                    </li>
+
+                                    <li>
+                                        <hr class="dropdown-divider" />
+                                    </li>
+
+                                    <li>
+                                        <button class="dropdown-item text-danger"
+                                                @onclick="() => DeleteRequestAsync(request)">
+
+                                            <i class="bi bi-trash me-2"></i>
+
+                                            Delete
+
+                                        </button>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- TITLE -->
+                    <div class="request-content">
+
+                        <h3>
+                            @request.Title
+                        </h3>
+
+                        <p>
+                            @request.Content
+                        </p>
+
+                    </div>
+
+
+                    <!-- FOOTER -->
+                    <div class="request-card-footer">
+
+                        <div class="request-meta">
+
+                            <span>
+                                <i class="bi bi-person"></i>
+                                @request.UserName
+                            </span>
+
+                        </div>
+
+
+                        <div class="status-control">
+
+                            <label>
+                                Status
+                            </label>
+
+                            <select class="status-select @GetSelectStatusClass(request.Status)"
+                                    value="@request.Status"
+                                    @onchange="async e => await StatusChangedAsync(request, e.Value?.ToString())">
+
+                                <option value="Pending">
+                                    Pending
+                                </option>
+
+                                <option value="Approved">
+                                    Approved
+                                </option>
+
+                                <option value="Answered">
+                                    Answered
+                                </option>
+
+                                <option value="Rejected">
+                                    Rejected
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
 
 @code {
+
+    private List<PrayerRequest> PrayerRequests =
+        new();
+
+    private bool IsLoading;
+
+    private string SearchTerm = "";
+
+    private string SelectedStatus = "All";
+
+    private string ErrorMessage = "";
+
+    private string SuccessMessage = "";
+
+
+    private IEnumerable<PrayerRequest> FilteredPrayerRequests
+    {
+        get
+        {
+            IEnumerable<PrayerRequest> result =
+                PrayerRequests;
+
+            if (!string.IsNullOrWhiteSpace(SelectedStatus)
+                && SelectedStatus != "All")
+            {
+                result = result.Where(
+                    request =>
+                        request.Status.Equals(
+                            SelectedStatus,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                var search =
+                    SearchTerm.Trim();
+
+                result = result.Where(
+                    request =>
+                        request.Title.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        request.Content.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase)
+                        ||
+                        request.UserName.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase));
+            }
+
+            return result
+                .OrderByDescending(request => request.Date);
+        }
+    }
+
+
+    private int PendingCount =>
+        PrayerRequests.Count(
+            request =>
+                request.Status.Equals(
+                    "Pending",
+                    StringComparison.OrdinalIgnoreCase));
+
+
+    private int AnsweredCount =>
+        PrayerRequests.Count(
+            request =>
+                request.Status.Equals(
+                    "Answered",
+                    StringComparison.OrdinalIgnoreCase));
+
+
+    private int RejectedCount =>
+        PrayerRequests.Count(
+            request =>
+                request.Status.Equals(
+                    "Rejected",
+                    StringComparison.OrdinalIgnoreCase));
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPrayerRequestsAsync();
+    }
+
+
+    private async Task LoadPrayerRequestsAsync()
+    {
+        try
+        {
+            IsLoading = true;
+
+            ErrorMessage = "";
+
+            var requests =
+                await AuthService.GetPrayerRequestsAsync();
+
+            PrayerRequests =
+                requests ?? new List<PrayerRequest>();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to load prayer requests: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    private async Task StatusChangedAsync(
+        PrayerRequest request,
+        string? newStatus)
+    {
+        if (string.IsNullOrWhiteSpace(newStatus))
+            return;
+
+        if (request.Status.Equals(
+            newStatus,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await SetStatusAsync(
+            request,
+            newStatus);
+    }
+
+
+    private async Task SetStatusAsync(
+        PrayerRequest request,
+        string status)
+    {
+        try
+        {
+            ErrorMessage = "";
+
+            await AuthService.UpdatePrayerRequestStatusAsync(
+                request.RequestId,
+                status);
+
+            request.Status = status;
+
+            SuccessMessage =
+                $"Prayer request marked as {status.ToLowerInvariant()}.";
+
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to update prayer request: {GetErrorMessage(ex)}";
+        }
+    }
+
+
+    private async Task DeleteRequestAsync(
+        PrayerRequest request)
+    {
+        try
+        {
+            var confirmed =
+                await JS.InvokeAsync<bool>(
+                    "confirm",
+                    $"Are you sure you want to delete the prayer request \"{request.Title}\"?");
+
+            if (!confirmed)
+                return;
+
+            ErrorMessage = "";
+
+            await AuthService.DeletePrayerRequestAsync(
+                request.RequestId);
+
+            PrayerRequests.Remove(request);
+
+            SuccessMessage =
+                "Prayer request deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to delete prayer request: {GetErrorMessage(ex)}";
+        }
+    }
+
+
+    private void ClearSearch()
+    {
+        SearchTerm = "";
+    }
+
+
+    private void ClearError()
+    {
+        ErrorMessage = "";
+    }
+
+
+    private void ClearSuccess()
+    {
+        SuccessMessage = "";
+    }
+
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "U";
+
+        var parts =
+            name.Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length == 1)
+            return parts[0][0].ToString().ToUpper();
+
+        return $"{parts[0][0]}{parts[^1][0]}"
+            .ToUpper();
+    }
+
+
+    private string GetStatusClass(string status)
+    {
+        return status.ToLowerInvariant() switch
+        {
+            "approved" =>
+                "status-badge status-approved",
+
+            "answered" =>
+                "status-badge status-answered",
+
+            "rejected" =>
+                "status-badge status-rejected",
+
+            _ =>
+                "status-badge status-pending"
+        };
+    }
+
+
+    private string GetSelectStatusClass(string status)
+    {
+        return status.ToLowerInvariant() switch
+        {
+            "approved" =>
+                "select-approved",
+
+            "answered" =>
+                "select-answered",
+
+            "rejected" =>
+                "select-rejected",
+
+            _ =>
+                "select-pending"
+        };
+    }
+
+
+    private string GetErrorMessage(Exception ex)
+    {
+        if (ex is JSException jsException)
+        {
+            return jsException.Message;
+        }
+
+        return ex.Message;
+    }
 
 }

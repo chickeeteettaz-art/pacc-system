@@ -80,11 +80,14 @@
                     collection,
                     getDocs,
                     getDoc,
+                    doc,
                     setDoc,
                     addDoc,
                     updateDoc,
                     deleteDoc,
-                    doc
+                    Timestamp,
+                    query,
+                    orderBy
                 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
@@ -1347,6 +1350,723 @@ window.firebaseAuth.deleteOutreachProgram = async function (outreachId) {
 
 
     await deleteDoc(programRef);
+
+    return true;
+};
+
+/*
+=========================================================
+SERMONS
+=========================================================
+*/
+
+window.firebaseAuth.getSermons = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const sermonsRef = collection(db, "sermons");
+
+    const sermonsQuery = query(
+        sermonsRef,
+        orderBy("date", "desc")
+    );
+
+    const snapshot = await getDocs(sermonsQuery);
+
+    const sermons = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data = documentSnapshot.data();
+
+        sermons.push({
+            sermonId: documentSnapshot.id,
+
+            title: data.title || "",
+
+            content: data.content || "",
+
+            date: data.date
+                ? data.date.toDate().toISOString()
+                : new Date().toISOString(),
+
+            pastorName: data.pastorName || "",
+
+            imageUrl: data.imageUrl || "",
+
+            duration: data.duration || ""
+        });
+    });
+
+    return sermons;
+};
+
+
+window.firebaseAuth.createSermon = async function (sermon) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!sermon) {
+        throw new Error("Sermon data is required.");
+    }
+
+    if (!sermon.title || sermon.title.trim() === "") {
+        throw new Error("Sermon title is required.");
+    }
+
+    /*
+     * Blazor serializes DateTime to an ISO date string.
+     * Convert it into a JavaScript Date first.
+     */
+    const sermonDate = sermon.date
+        ? new Date(sermon.date)
+        : new Date();
+
+    if (isNaN(sermonDate.getTime())) {
+        throw new Error("Invalid sermon date.");
+    }
+
+    /*
+     * Convert JavaScript Date to Firestore Timestamp.
+     */
+    const firestoreTimestamp =
+        Timestamp.fromDate(sermonDate);
+
+    const sermonData = {
+
+        title: sermon.title.trim(),
+
+        content: sermon.content || "",
+
+        date: firestoreTimestamp,
+
+        pastorName: sermon.pastorName || "",
+
+        imageUrl: sermon.imageUrl || "",
+
+        duration: sermon.duration || "",
+
+        createdBy: auth.currentUser.uid,
+
+        createdAt: Timestamp.now()
+    };
+
+    const documentReference = await addDoc(
+        collection(db, "sermons"),
+        sermonData
+    );
+
+    return {
+        sermonId: documentReference.id,
+
+        title: sermonData.title,
+
+        content: sermonData.content,
+
+        date: sermonDate.toISOString(),
+
+        pastorName: sermonData.pastorName,
+
+        imageUrl: sermonData.imageUrl,
+
+        duration: sermonData.duration
+    };
+};
+
+
+window.firebaseAuth.updateSermon = async function (
+    sermonId,
+    sermon
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!sermonId) {
+        throw new Error("Sermon ID is required.");
+    }
+
+    if (!sermon) {
+        throw new Error("Sermon data is required.");
+    }
+
+    if (!sermon.title || sermon.title.trim() === "") {
+        throw new Error("Sermon title is required.");
+    }
+
+    const sermonDate = sermon.date
+        ? new Date(sermon.date)
+        : new Date();
+
+    if (isNaN(sermonDate.getTime())) {
+        throw new Error("Invalid sermon date.");
+    }
+
+    const firestoreTimestamp =
+        Timestamp.fromDate(sermonDate);
+
+    const sermonRef = doc(
+        db,
+        "sermons",
+        sermonId
+    );
+
+    await updateDoc(
+        sermonRef,
+        {
+            title: sermon.title.trim(),
+
+            content: sermon.content || "",
+
+            date: firestoreTimestamp,
+
+            pastorName: sermon.pastorName || "",
+
+            imageUrl: sermon.imageUrl || "",
+
+            duration: sermon.duration || "",
+
+            updatedAt: Timestamp.now()
+        }
+    );
+
+    return true;
+};
+
+
+window.firebaseAuth.deleteSermon = async function (
+    sermonId
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!sermonId) {
+        throw new Error("Sermon ID is required.");
+    }
+
+    await deleteDoc(
+        doc(
+            db,
+            "sermons",
+            sermonId
+        )
+    );
+
+    return true;
+};// GET SERMONS
+// ============================================================
+
+window.firebaseAuth.getSermons = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot =
+        await getDocs(
+            collection(db, "sermons")
+        );
+
+    const sermons = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data =
+            documentSnapshot.data();
+
+        let sermonDate = "";
+
+        if (data.date) {
+
+            if (typeof data.date.toDate === "function") {
+
+                sermonDate =
+                    data.date.toDate().toISOString();
+
+            } else {
+
+                sermonDate =
+                    data.date;
+            }
+        }
+
+
+        sermons.push({
+
+            sermonId:
+                Number(
+                    data.sermonId ||
+                    documentSnapshot.id ||
+                    0
+                ),
+
+            title:
+                data.title || "",
+
+            content:
+                data.content || "",
+
+            date:
+                sermonDate,
+
+            pastorName:
+                data.pastorName || "",
+
+            imageUrl:
+                data.imageUrl || "",
+
+            videoUrl:
+                data.videoUrl || "",
+
+            duration:
+                data.duration || ""
+        });
+    });
+
+
+    return sermons;
+};
+
+window.firebaseAuth.createSermon = async function (sermon) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    const sermonId =
+        Number(sermon.sermonId);
+
+
+    if (!sermonId) {
+        throw new Error(
+            "A valid sermon ID is required."
+        );
+    }
+
+
+    const sermonRef =
+        doc(
+            db,
+            "sermons",
+            String(sermonId)
+        );
+
+
+    await setDoc(
+        sermonRef,
+        {
+
+            sermonId: sermonId,
+
+            title:
+                sermon.title || "",
+
+            content:
+                sermon.content || "",
+
+            date:
+                sermon.date
+                    ? Timestamp.fromDate(
+                        new Date(sermon.date)
+                    )
+                    : Timestamp.now(),
+
+            pastorName:
+                sermon.pastorName || "",
+
+            imageUrl:
+                sermon.imageUrl || "",
+
+            videoUrl:
+                sermon.videoUrl || "",
+
+            duration:
+                sermon.duration || "",
+
+            createdBy:
+                auth.currentUser.uid,
+
+            createdAt:
+                Timestamp.now()
+        }
+    );
+
+
+    return true;
+};
+
+window.firebaseAuth.updateSermon = async function (sermon) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    const sermonId =
+        Number(sermon.sermonId);
+
+
+    if (!sermonId) {
+        throw new Error(
+            "A valid sermon ID is required."
+        );
+    }
+
+
+    const sermonRef =
+        doc(
+            db,
+            "sermons",
+            String(sermonId)
+        );
+
+
+    await updateDoc(
+        sermonRef,
+        {
+
+            title:
+                sermon.title || "",
+
+            content:
+                sermon.content || "",
+
+            date:
+                sermon.date
+                    ? Timestamp.fromDate(
+                        new Date(sermon.date)
+                    )
+                    : Timestamp.now(),
+
+            pastorName:
+                sermon.pastorName || "",
+
+            imageUrl:
+                sermon.imageUrl || "",
+
+            videoUrl:
+                sermon.videoUrl || "",
+
+            duration:
+                sermon.duration || "",
+
+            updatedAt:
+                Timestamp.now()
+        }
+    );
+
+
+    return true;
+};
+
+window.firebaseAuth.deleteSermon = async function (sermonId) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    const sermonRef =
+        doc(
+            db,
+            "sermons",
+            String(sermonId)
+        );
+
+
+    await deleteDoc(sermonRef);
+
+
+    return true;
+};
+
+/*
+=========================================================
+PRAYER REQUESTS
+=========================================================
+*/
+
+/*
+ * USER:
+ * Create a prayer request.
+ *
+ * The Firebase UID is taken directly from the
+ * authenticated Firebase user rather than being
+ * supplied by the Razor page.
+ */
+window.firebaseAuth.createPrayerRequest = async function (
+    title,
+    content
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!title || title.trim() === "") {
+        throw new Error("Prayer request title is required.");
+    }
+
+    if (!content || content.trim() === "") {
+        throw new Error("Prayer request content is required.");
+    }
+
+    const currentUser = auth.currentUser;
+
+    /*
+     * Get the user's profile from Firestore.
+     */
+    const userRef = doc(
+        db,
+        "users",
+        currentUser.uid
+    );
+
+    const userSnapshot = await getDoc(userRef);
+
+    let userName = currentUser.email || "User";
+
+    if (userSnapshot.exists()) {
+
+        const userData = userSnapshot.data();
+
+        const firstName = userData.firstName || "";
+        const lastName = userData.lastName || "";
+
+        const fullName =
+            `${firstName} ${lastName}`.trim();
+
+        if (fullName) {
+            userName = fullName;
+        }
+    }
+
+    const requestData = {
+
+        userId: currentUser.uid,
+
+        title: title.trim(),
+
+        content: content.trim(),
+
+        date: Timestamp.now(),
+
+        userName: userName,
+
+        status: "Pending"
+    };
+
+    const documentReference = await addDoc(
+        collection(db, "prayerRequests"),
+        requestData
+    );
+
+    return {
+        requestId: documentReference.id,
+
+        userId: requestData.userId,
+
+        title: requestData.title,
+
+        content: requestData.content,
+
+        date: requestData.date.toDate().toISOString(),
+
+        userName: requestData.userName,
+
+        status: requestData.status
+    };
+};
+
+
+/*
+ * USER:
+ * Get only the currently logged-in user's
+ * prayer requests.
+ */
+window.firebaseAuth.getMyPrayerRequests = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const currentUser = auth.currentUser;
+
+    const snapshot = await getDocs(
+        collection(db, "prayerRequests")
+    );
+
+    const requests = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data = documentSnapshot.data();
+
+        /*
+         * Only return this user's requests.
+         */
+        if (data.userId !== currentUser.uid) {
+            return;
+        }
+
+        requests.push({
+
+            requestId: documentSnapshot.id,
+
+            userId: data.userId || "",
+
+            title: data.title || "",
+
+            content: data.content || "",
+
+            date: data.date
+                ? data.date.toDate().toISOString()
+                : new Date().toISOString(),
+
+            userName: data.userName || "",
+
+            status: data.status || "Pending"
+        });
+    });
+
+    /*
+     * Newest first.
+     */
+    requests.sort(
+        (a, b) =>
+            new Date(b.date) - new Date(a.date)
+    );
+
+    return requests;
+};
+
+
+/*
+ * ADMIN:
+ * Get all prayer requests.
+ */
+window.firebaseAuth.getPrayerRequests = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot = await getDocs(
+        collection(db, "prayerRequests")
+    );
+
+    const requests = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data = documentSnapshot.data();
+
+        requests.push({
+
+            requestId: documentSnapshot.id,
+
+            userId: data.userId || "",
+
+            title: data.title || "",
+
+            content: data.content || "",
+
+            date: data.date
+                ? data.date.toDate().toISOString()
+                : new Date().toISOString(),
+
+            userName: data.userName || "Unknown User",
+
+            status: data.status || "Pending"
+        });
+    });
+
+    requests.sort(
+        (a, b) =>
+            new Date(b.date) - new Date(a.date)
+    );
+
+    return requests;
+};
+
+
+/*
+ * ADMIN:
+ * Update the status of a prayer request.
+ */
+window.firebaseAuth.updatePrayerRequestStatus = async function (
+    requestId,
+    status
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const validStatuses = [
+        "Pending",
+        "Approved",
+        "Answered",
+        "Rejected"
+    ];
+
+    if (!validStatuses.includes(status)) {
+        throw new Error("Invalid prayer request status.");
+    }
+
+    if (!requestId) {
+        throw new Error("Prayer request ID is required.");
+    }
+
+    const requestRef = doc(
+        db,
+        "prayerRequests",
+        requestId
+    );
+
+    await updateDoc(
+        requestRef,
+        {
+            status: status,
+            updatedAt: Timestamp.now()
+        }
+    );
+
+    return true;
+};
+
+
+/*
+ * ADMIN:
+ * Delete a prayer request.
+ */
+window.firebaseAuth.deletePrayerRequest = async function (
+    requestId
+) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    if (!requestId) {
+        throw new Error("Prayer request ID is required.");
+    }
+
+    await deleteDoc(
+        doc(
+            db,
+            "prayerRequests",
+            requestId
+        )
+    );
 
     return true;
 };

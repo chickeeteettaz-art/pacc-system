@@ -674,6 +674,201 @@ namespace pacc_system_test_one.Services
             }
         }
 
+        //sermon methods
+        public async Task<List<Sermon>> GetSermonsAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var sermons =
+                    await _jsRuntime.InvokeAsync<List<Sermon>>(
+                        "firebaseAuth.getSermons");
+
+                return sermons ?? new List<Sermon>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getSermons error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task CreateSermonAsync(
+            Sermon sermon)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.createSermon",
+                    sermon);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase createSermon error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task UpdateSermonAsync(
+            Sermon sermon)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateSermon",
+                    sermon);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updateSermon error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task DeleteSermonAsync(
+            int sermonId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteSermon",
+                    sermonId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteSermon error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+        //prayer requests methods
+        public async Task<List<PrayerRequest>> GetPrayerRequestsAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var requests =
+                    await _jsRuntime.InvokeAsync<List<PrayerRequest>>(
+                        "firebaseAuth.getPrayerRequests");
+
+                return requests ?? new List<PrayerRequest>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getPrayerRequests error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task<List<PrayerRequest>> GetMyPrayerRequestsAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var requests =
+                    await _jsRuntime.InvokeAsync<List<PrayerRequest>>(
+                        "firebaseAuth.getMyPrayerRequests");
+
+                return requests ?? new List<PrayerRequest>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getMyPrayerRequests error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task CreatePrayerRequestAsync(
+            string title,
+            string content)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.createPrayerRequest",
+                    title,
+                    content);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase createPrayerRequest error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task UpdatePrayerRequestStatusAsync(
+            string requestId,
+            string status)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updatePrayerRequestStatus",
+                    requestId,
+                    status);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updatePrayerRequestStatus error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task DeletePrayerRequestAsync(
+            string requestId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deletePrayerRequest",
+                    requestId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deletePrayerRequest error: {ex.Message}");
+
+                throw;
+            }
+        }
 
         // =====================================================
         // LOGOUT
