@@ -1,5 +1,1846 @@
-﻿<h3>ManageSermons</h3>
+﻿@page "/admin/sermons"
+@layout AdminLayout
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IBlobStorageService BlobStorageService
+@inject IJSRuntime JS
+
+<div class="sermons-page">
+
+    <!-- =====================================================
+         PAGE HEADER
+         ===================================================== -->
+
+    <div class="page-header-section">
+
+        <div class="page-header-content">
+
+            <div class="breadcrumb-text">
+                <span>Administration</span>
+                <span>/</span>
+                <strong>Sermons</strong>
+            </div>
+
+            <h1>
+                <i class="bi bi-play-circle-fill"></i>
+                Sermons
+            </h1>
+
+            <p>
+                Manage sermons, sermon videos and preaching content.
+            </p>
+
+        </div>
+
+        <button class="add-button"
+                type="button"
+                @onclick="OpenCreateForm">
+
+            <i class="bi bi-plus-lg"></i>
+
+            Add Sermon
+
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         ALERTS
+         ===================================================== -->
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="custom-alert alert-success">
+
+            <div class="alert-content">
+
+                <i class="bi bi-check-circle-fill"></i>
+
+                <span>@SuccessMessage</span>
+
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="custom-alert alert-danger">
+
+            <div class="alert-content">
+
+                <i class="bi bi-exclamation-triangle-fill"></i>
+
+                <span>@ErrorMessage</span>
+
+            </div>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearMessages">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         STATISTICS
+         ===================================================== -->
+    @if (!IsLoading)
+    {
+        <div class="stats-grid">
+
+            <div class="stat-card">
+
+                <div class="stat-icon blue">
+                    <i class="bi bi-collection-play"></i>
+                </div>
+
+                <div class="stat-information">
+
+                    <span>Total Sermons</span>
+
+                    <strong>@Sermons.Count</strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon green">
+                    <i class="bi bi-camera-video"></i>
+                </div>
+
+                <div class="stat-information">
+
+                    <span>Videos</span>
+
+                    <strong>
+                        @Sermons.Count(x => !string.IsNullOrWhiteSpace(x.VideoUrl))
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon orange">
+                    <i class="bi bi-image"></i>
+                </div>
+
+                <div class="stat-information">
+
+                    <span>With Images</span>
+
+                    <strong>
+                        @Sermons.Count(x => !string.IsNullOrWhiteSpace(x.ImageUrl))
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon purple">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+
+                <div class="stat-information">
+
+                    <span>This Year</span>
+
+                    <strong>
+                        @Sermons.Count(x => x.Date.Year == DateTime.Now.Year)
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+
+    <!-- =====================================================
+         SEARCH
+         ===================================================== -->
+
+    <div class="toolbar-card">
+
+        <div class="search-wrapper">
+
+            <i class="bi bi-search search-icon"></i>
+
+            <input class="search-input"
+                   type="text"
+                   placeholder="Search sermons, pastors or content..."
+                   @bind="SearchText"
+                   @bind:event="oninput" />
+
+            @if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                <button class="clear-search"
+                        type="button"
+                        @onclick="ClearSearch">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+            }
+
+        </div>
+
+
+        @if (!IsLoading)
+        {
+            <div class="result-count">
+
+                Showing
+
+                <strong>@FilteredSermons.Count</strong>
+
+                of
+
+                <strong>@Sermons.Count</strong>
+
+                sermons
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- =====================================================
+         LOADING
+         ===================================================== -->
+    @if (IsLoading)
+    {
+        <div class="loading-state">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+            </div>
+
+            <p>Loading sermons...</p>
+
+        </div>
+    }
+    else if (!FilteredSermons.Any())
+    {
+        <!-- =================================================
+             EMPTY STATE
+             ================================================= -->
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+
+                <i class="bi bi-camera-video"></i>
+
+            </div>
+
+            @if (Sermons.Any())
+            {
+                <h3>No sermons found</h3>
+
+                <p>
+                    No sermons match your search.
+                </p>
+
+                <button class="btn btn-outline-primary"
+                        @onclick="ClearSearch">
+
+                    <i class="bi bi-arrow-counterclockwise"></i>
+
+                    Clear Search
+
+                </button>
+            }
+            else
+            {
+                <h3>No sermons yet</h3>
+
+                <p>
+                    There are currently no sermons in the system.
+                </p>
+
+                <button class="btn btn-primary"
+                        @onclick="OpenCreateForm">
+
+                    <i class="bi bi-plus-lg"></i>
+
+                    Add First Sermon
+
+                </button>
+            }
+
+        </div>
+    }
+    else
+    {
+        <!-- =================================================
+             SERMON GRID
+             ================================================= -->
+
+        <div class="sermons-grid">
+
+            @foreach (var sermon in FilteredSermons)
+            {
+                <div class="sermon-card">
+
+                    <!-- MEDIA -->
+
+                    <div class="sermon-media">
+
+                        @if (!string.IsNullOrWhiteSpace(sermon.ImageUrl))
+                        {
+                            <img src="@sermon.ImageUrl"
+                                 alt="@sermon.Title"
+                                 class="sermon-thumbnail"
+                                 @onerror="HandleImageError" />
+                        }
+                        else
+                        {
+                            <div class="sermon-no-image">
+
+                                <i class="bi bi-camera-video"></i>
+
+                                <span>
+                                    No thumbnail
+                                </span>
+
+                            </div>
+                        }
+
+
+                        @if (!string.IsNullOrWhiteSpace(sermon.VideoUrl))
+                        {
+                            <div class="media-overlay">
+
+                                <button type="button"
+                                        class="play-button"
+                                        title="Play sermon"
+                                        @onclick="() => OpenVideo(sermon)">
+
+                                    <i class="bi bi-play-fill"></i>
+
+                                </button>
+
+                            </div>
+                        }
+
+
+                        <div class="sermon-date-badge">
+
+                            <i class="bi bi-calendar3"></i>
+
+                            @sermon.Date.ToString("dd MMM yyyy")
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- BODY -->
+
+                    <div class="sermon-card-body">
+
+                        <div class="sermon-card-header">
+
+                            <h3>
+                                @sermon.Title
+                            </h3>
+
+                            @if (!string.IsNullOrWhiteSpace(sermon.Duration))
+                            {
+                                <span class="duration-badge">
+
+                                    <i class="bi bi-clock"></i>
+
+                                    @sermon.Duration
+
+                                </span>
+                            }
+
+                        </div>
+
+
+                        <!-- PASTOR -->
+                        @if (!string.IsNullOrWhiteSpace(sermon.PastorName))
+                        {
+                            <div class="pastor-information">
+
+                                <div class="pastor-icon">
+
+                                    <i class="bi bi-person"></i>
+
+                                </div>
+
+                                <div>
+
+                                    <span>Preached by</span>
+
+                                    <strong>
+                                        @sermon.PastorName
+                                    </strong>
+
+                                </div>
+
+                            </div>
+                        }
+
+
+                        <!-- DATE -->
+
+                        <div class="sermon-date">
+
+                            <i class="bi bi-calendar-event"></i>
+
+                            <span>
+                                @sermon.Date.ToString("dddd, dd MMMM yyyy HH:mm")
+                            </span>
+
+                        </div>
+
+
+                        <!-- CONTENT -->
+                        @if (!string.IsNullOrWhiteSpace(sermon.Content))
+                        {
+                            <p class="sermon-content-preview">
+
+                                @GetPreview(sermon.Content)
+
+                            </p>
+                        }
+
+
+                        <!-- VIDEO STATUS -->
+
+                        <div class="sermon-status">
+
+                            @if (!string.IsNullOrWhiteSpace(sermon.VideoUrl))
+                            {
+                                <span class="status-badge video">
+
+                                    <i class="bi bi-check-circle"></i>
+
+                                    Video uploaded
+
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-badge no-video">
+
+                                    <i class="bi bi-camera-video-off"></i>
+
+                                    No video
+
+                                </span>
+                            }
+
+                        </div>
+
+
+                        <!-- ACTIONS -->
+
+                        <div class="sermon-actions">
+
+                            @if (!string.IsNullOrWhiteSpace(sermon.VideoUrl))
+                            {
+                                <button type="button"
+                                        class="action-button edit"
+                                        @onclick="() => OpenVideo(sermon)">
+
+                                    <i class="bi bi-play-circle"></i>
+
+                                    Watch
+
+                                </button>
+                            }
+
+                            <button type="button"
+                                    class="action-button edit"
+                                    @onclick="() => OpenEditForm(sermon)">
+
+                                <i class="bi bi-pencil"></i>
+
+                                Edit
+
+                            </button>
+
+                            <button type="button"
+                                    class="action-button delete"
+                                    @onclick="() => DeleteSermonAsync(sermon)">
+
+                                <i class="bi bi-trash"></i>
+
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+<!-- =========================================================
+     CREATE / EDIT MODAL
+     ========================================================= -->
+@if (ShowForm)
+{
+    <div class="modal-backdrop-custom"
+         @onclick="CloseForm">
+
+        <div class="sermon-modal"
+             @onclick:stopPropagation="true">
+
+            <!-- HEADER -->
+
+            <div class="modal-header-custom">
+
+                <div class="modal-heading">
+
+                    <div class="modal-icon">
+
+                        <i class="bi bi-camera-video"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            @(IsEditing ? "Edit Sermon" : "Add Sermon")
+                        </h2>
+
+                        <p>
+                            @(IsEditing
+                                ? "Update sermon information and media."
+                                : "Add a new sermon and upload its media.")
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <button type="button"
+                        class="modal-close"
+                        @onclick="CloseForm">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- BODY -->
+
+            <div class="modal-body-custom">
+
+                <!-- TITLE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Sermon Title
+                        <span>*</span>
+                    </label>
+
+                    <div class="input-with-icon">
+
+                        <i class="bi bi-type"></i>
+
+                        <input class="form-control"
+                               @bind="FormTitle"
+                               placeholder="Enter sermon title..." />
+
+                    </div>
+
+                </div>
+
+
+                <!-- PASTOR -->
+
+                <div class="form-group">
+
+                    <label>
+                        Pastor / Preacher
+                        <span>*</span>
+                    </label>
+
+                    <div class="input-with-icon">
+
+                        <i class="bi bi-person"></i>
+
+                        <input class="form-control"
+                               @bind="FormPastorName"
+                               placeholder="Enter pastor name..." />
+
+                    </div>
+
+                </div>
+
+
+                <!-- DATE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Sermon Date
+                        <span>*</span>
+                    </label>
+
+                    <div class="input-with-icon">
+
+                        <i class="bi bi-calendar-event"></i>
+
+                        <input type="datetime-local"
+                               class="form-control"
+                               @bind="FormDate"
+                               @bind:format="yyyy-MM-ddTHH:mm" />
+
+                    </div>
+
+                </div>
+
+
+                <!-- DURATION -->
+
+                <div class="form-group">
+
+                    <label>
+                        Duration
+                    </label>
+
+                    <div class="input-with-icon">
+
+                        <i class="bi bi-clock"></i>
+
+                        <input class="form-control"
+                               @bind="FormDuration"
+                               placeholder="e.g. 45 minutes" />
+
+                    </div>
+
+                    <small class="form-help">
+                        Enter the sermon duration, for example 45 minutes.
+                    </small>
+
+                </div>
+
+
+                <!-- CONTENT -->
+
+                <div class="form-group">
+
+                    <label>
+                        Sermon Content
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="6"
+                              @bind="FormContent"
+                              placeholder="Enter sermon notes, description or content...">
+                    </textarea>
+
+                </div>
+
+
+                <!-- IMAGE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Sermon Thumbnail
+                    </label>
+
+                    <InputFile OnChange="HandleImageSelected"
+                               accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                               class="form-control" />
+
+                    <small class="form-help">
+                        Accepted formats: JPG, JPEG, PNG, GIF and WEBP.
+                        Maximum size: 10 MB.
+                    </small>
+
+                </div>
+
+
+                <!-- IMAGE PREVIEW -->
+                @if (!string.IsNullOrWhiteSpace(ImagePreviewUrl))
+                {
+                    <div class="preview-section">
+
+                        <label>
+                            Image Preview
+                        </label>
+
+                        <div class="image-preview-container">
+
+                            <img src="@ImagePreviewUrl"
+                                 alt="Sermon preview" />
+
+                        </div>
+
+                    </div>
+                }
+
+
+                <!-- EXISTING IMAGE -->
+                @if (IsEditing &&
+                                     !string.IsNullOrWhiteSpace(EditingSermon?.ImageUrl) &&
+                                     string.IsNullOrWhiteSpace(ImagePreviewUrl))
+                {
+                    <div class="preview-section">
+
+                        <label>
+                            Current Image
+                        </label>
+
+                        <div class="image-preview-container">
+
+                            <img src="@EditingSermon!.ImageUrl"
+                                 alt="@EditingSermon.Title" />
+
+                        </div>
+
+                    </div>
+                }
+
+
+                <!-- VIDEO -->
+
+                <div class="form-group">
+
+                    <label>
+                        Sermon Video
+                    </label>
+
+                    <InputFile OnChange="HandleVideoSelected"
+                               accept="video/*,.mp4,.mov,.avi,.webm,.mkv"
+                               class="form-control" />
+
+                    <small class="form-help">
+                        Select the sermon video to upload to Azure Blob Storage.
+                        Maximum size: 500 MB.
+                    </small>
+
+                </div>
+
+
+                <!-- VIDEO SELECTION -->
+                @if (SelectedVideo != null)
+                {
+                    <div class="selected-file">
+
+                        <i class="bi bi-file-earmark-play"></i>
+
+                        <div>
+
+                            <strong>
+                                @SelectedVideo.Name
+                            </strong>
+
+                            <small>
+                                @FormatFileSize(SelectedVideo.Size)
+                            </small>
+
+                        </div>
+
+                    </div>
+                }
+
+
+                <!-- EXISTING VIDEO -->
+                @if (IsEditing &&
+                                     !string.IsNullOrWhiteSpace(EditingSermon?.VideoUrl) &&
+                                     SelectedVideo == null)
+                {
+                    <div class="existing-video">
+
+                        <div class="existing-video-header">
+
+                            <span>
+                                <i class="bi bi-camera-video"></i>
+                                Existing video
+                            </span>
+
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    @onclick="() => OpenVideo(EditingSermon!)">
+
+                                <i class="bi bi-play"></i>
+
+                                Preview
+
+                            </button>
+
+                        </div>
+
+                    </div>
+                }
+
+
+                <!-- UPLOAD STATUS -->
+                @if (IsSaving)
+                {
+                    <div class="upload-progress">
+
+                        <div class="spinner-border spinner-border-sm text-primary">
+                        </div>
+
+                        <span>
+                            @UploadStatus
+                        </span>
+
+                    </div>
+                }
+
+            </div>
+
+
+            <!-- FOOTER -->
+
+            <div class="modal-footer-custom">
+
+                <button type="button"
+                        class="btn btn-light"
+                        disabled="@IsSaving"
+                        @onclick="CloseForm">
+
+                    Cancel
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary save-button"
+                        disabled="@IsSaving"
+                        @onclick="SaveSermonAsync">
+
+                    @if (IsSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span>
+
+                        <span>Saving...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-lg"></i>
+
+                        <span>
+                            @(IsEditing ? "Update Sermon" : "Save Sermon")
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
+
+<!-- =========================================================
+     VIDEO PLAYER MODAL
+     ========================================================= -->
+@if (ShowVideo)
+{
+    <div class="modal-backdrop-custom"
+         @onclick="CloseVideo">
+
+        <div class="video-modal"
+             @onclick:stopPropagation="true">
+
+            <div class="video-modal-header">
+
+                <div>
+
+                    <h3>
+                        @SelectedSermon?.Title
+                    </h3>
+
+                    <span>
+                        @SelectedSermon?.PastorName
+                    </span>
+
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        @onclick="CloseVideo">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            @if (!string.IsNullOrWhiteSpace(SelectedSermon?.VideoUrl))
+            {
+                <div class="video-player-container">
+
+                    <video class="full-video"
+                           controls
+                           autoplay
+                           src="@SelectedSermon.VideoUrl">
+                    </video>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
 
 @code {
 
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    private List<Sermon> Sermons { get; set; } = new();
+
+    private List<Sermon> FilteredSermons =>
+        string.IsNullOrWhiteSpace(SearchText)
+            ? Sermons
+            : Sermons
+                .Where(s =>
+                    s.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                    s.PastorName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
+                    s.Content.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(s => s.Date)
+                .ToList();
+
+
+    // =========================================================
+    // STATE
+    // =========================================================
+
+    private bool IsLoading { get; set; }
+
+    private bool IsSaving { get; set; }
+
+    private bool ShowForm { get; set; }
+
+    private bool ShowVideo { get; set; }
+
+    private bool IsEditing { get; set; }
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private string SearchText { get; set; } = "";
+
+
+    // =========================================================
+    // MESSAGES
+    // =========================================================
+
+    private string SuccessMessage { get; set; } = "";
+
+    private string ErrorMessage { get; set; } = "";
+
+
+    // =========================================================
+    // FORM
+    // =========================================================
+
+    private int FormSermonId { get; set; }
+
+    private string FormTitle { get; set; } = "";
+
+    private string FormContent { get; set; } = "";
+
+    private DateTime FormDate { get; set; } = DateTime.Now;
+
+    private string FormPastorName { get; set; } = "";
+
+    private string FormDuration { get; set; } = "";
+
+
+    // =========================================================
+    // FILES
+    // =========================================================
+
+    private IBrowserFile? SelectedImage { get; set; }
+
+    private IBrowserFile? SelectedVideo { get; set; }
+
+    private string ImagePreviewUrl { get; set; } = "";
+
+
+    // =========================================================
+    // EXISTING RECORD
+    // =========================================================
+
+    private Sermon? EditingSermon { get; set; }
+
+    private Sermon? SelectedSermon { get; set; }
+
+
+    // =========================================================
+    // STATUS
+    // =========================================================
+
+    private string UploadStatus { get; set; } = "";
+
+
+    // =========================================================
+    // CONSTANTS
+    // =========================================================
+
+    private const long MaxImageSize =
+        10 * 1024 * 1024;
+
+    private const long MaxVideoSize =
+        500 * 1024 * 1024;
+
+
+    // =========================================================
+    // ALLOWED IMAGE TYPES
+    // =========================================================
+
+    private static readonly HashSet<string> AllowedImageExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".webp"
+        };
+
+
+    // =========================================================
+    // ALLOWED VIDEO TYPES
+    // =========================================================
+
+    private static readonly HashSet<string> AllowedVideoExtensions =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".mp4",
+            ".mov",
+            ".avi",
+            ".webm",
+            ".mkv"
+        };
+
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSermonsAsync();
+    }
+
+
+    // =========================================================
+    // LOAD SERMONS
+    // =========================================================
+
+    private async Task LoadSermonsAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = "";
+
+        try
+        {
+            Sermons = await AuthService.GetSermonsAsync();
+
+            Sermons = Sermons
+                .OrderByDescending(x => x.Date)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to load sermons: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // OPEN CREATE
+    // =========================================================
+
+    private void OpenCreateForm()
+    {
+        ClearMessages();
+
+        IsEditing = false;
+
+        EditingSermon = null;
+
+        FormSermonId = 0;
+
+        FormTitle = "";
+
+        FormContent = "";
+
+        FormPastorName = "";
+
+        FormDuration = "";
+
+        FormDate = DateTime.Now;
+
+        SelectedImage = null;
+
+        SelectedVideo = null;
+
+        ImagePreviewUrl = "";
+
+        UploadStatus = "";
+
+        ShowForm = true;
+    }
+
+
+    // =========================================================
+    // OPEN EDIT
+    // =========================================================
+
+    private void OpenEditForm(Sermon sermon)
+    {
+        ClearMessages();
+
+        IsEditing = true;
+
+        EditingSermon = sermon;
+
+        FormSermonId = sermon.SermonId;
+
+        FormTitle = sermon.Title;
+
+        FormContent = sermon.Content;
+
+        FormPastorName = sermon.PastorName;
+
+        FormDuration = sermon.Duration;
+
+        FormDate = sermon.Date;
+
+        SelectedImage = null;
+
+        SelectedVideo = null;
+
+        ImagePreviewUrl = "";
+
+        UploadStatus = "";
+
+        ShowForm = true;
+    }
+
+
+    // =========================================================
+    // CLOSE FORM
+    // =========================================================
+
+    private void CloseForm()
+    {
+        if (IsSaving)
+            return;
+
+        ShowForm = false;
+
+        ResetForm();
+    }
+
+
+    // =========================================================
+    // RESET FORM
+    // =========================================================
+
+    private void ResetForm()
+    {
+        EditingSermon = null;
+
+        SelectedImage = null;
+
+        SelectedVideo = null;
+
+        ImagePreviewUrl = "";
+
+        UploadStatus = "";
+
+        IsEditing = false;
+    }
+
+
+    // =========================================================
+    // IMAGE SELECTED
+    // =========================================================
+
+    private async Task HandleImageSelected(
+        InputFileChangeEventArgs e)
+    {
+        ErrorMessage = "";
+
+        SuccessMessage = "";
+
+        var file = e.File;
+
+        if (file == null)
+            return;
+
+
+        // Validate extension.
+
+        var extension =
+            Path.GetExtension(file.Name);
+
+
+        if (string.IsNullOrWhiteSpace(extension) ||
+            !AllowedImageExtensions.Contains(extension))
+        {
+            ErrorMessage =
+                "Only JPG, JPEG, PNG, GIF and WEBP images are allowed.";
+
+            SelectedImage = null;
+
+            ImagePreviewUrl = "";
+
+            return;
+        }
+
+
+        // Validate size.
+
+        if (file.Size > MaxImageSize)
+        {
+            ErrorMessage =
+                "The sermon image must be smaller than 10 MB.";
+
+            SelectedImage = null;
+
+            ImagePreviewUrl = "";
+
+            return;
+        }
+
+
+        try
+        {
+            SelectedImage = file;
+
+            await using var inputStream =
+                file.OpenReadStream(MaxImageSize);
+
+            using var memoryStream =
+                new MemoryStream();
+
+            await inputStream.CopyToAsync(memoryStream);
+
+            var bytes =
+                memoryStream.ToArray();
+
+            var contentType =
+                GetImageContentType(file.Name);
+
+            ImagePreviewUrl =
+                $"data:{contentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (Exception ex)
+        {
+            SelectedImage = null;
+
+            ImagePreviewUrl = "";
+
+            ErrorMessage =
+                $"Unable to preview image: {GetErrorMessage(ex)}";
+        }
+    }
+
+
+    // =========================================================
+    // VIDEO SELECTED
+    // =========================================================
+
+    private void HandleVideoSelected(
+        InputFileChangeEventArgs e)
+    {
+        ErrorMessage = "";
+
+        SuccessMessage = "";
+
+        var file = e.File;
+
+        if (file == null)
+            return;
+
+
+        var extension =
+            Path.GetExtension(file.Name);
+
+
+        if (string.IsNullOrWhiteSpace(extension) ||
+            !AllowedVideoExtensions.Contains(extension))
+        {
+            ErrorMessage =
+                "Please select a supported video file: MP4, MOV, AVI, WEBM or MKV.";
+
+            SelectedVideo = null;
+
+            return;
+        }
+
+
+        if (file.Size > MaxVideoSize)
+        {
+            ErrorMessage =
+                "The sermon video must be smaller than 500 MB.";
+
+            SelectedVideo = null;
+
+            return;
+        }
+
+
+        SelectedVideo = file;
+    }
+
+
+    // =========================================================
+    // SAVE SERMON
+    // =========================================================
+
+    private async Task SaveSermonAsync()
+    {
+        ClearMessages();
+
+
+        // Validate title.
+
+        if (string.IsNullOrWhiteSpace(FormTitle))
+        {
+            ErrorMessage =
+                "Please enter a sermon title.";
+
+            return;
+        }
+
+
+        // Validate pastor.
+
+        if (string.IsNullOrWhiteSpace(FormPastorName))
+        {
+            ErrorMessage =
+                "Please enter the pastor or preacher name.";
+
+            return;
+        }
+
+
+        // Validate date.
+
+        if (FormDate == default)
+        {
+            ErrorMessage =
+                "Please select a sermon date.";
+
+            return;
+        }
+
+
+        IsSaving = true;
+
+        try
+        {
+            var sermon =
+                new Sermon
+                {
+                    SermonId = FormSermonId,
+
+                    Title = FormTitle.Trim(),
+
+                    Content = FormContent.Trim(),
+
+                    Date = FormDate,
+
+                    PastorName = FormPastorName.Trim(),
+
+                    Duration = FormDuration.Trim(),
+
+                    ImageUrl =
+                        EditingSermon?.ImageUrl ?? "",
+
+                    VideoUrl =
+                        EditingSermon?.VideoUrl ?? ""
+                };
+
+
+            // =================================================
+            // UPLOAD IMAGE
+            // =================================================
+
+            if (SelectedImage != null)
+            {
+                UploadStatus =
+                    "Uploading sermon image...";
+
+                StateHasChanged();
+
+                var extension =
+                    Path.GetExtension(
+                        SelectedImage.Name)
+                    .ToLowerInvariant();
+
+                var fileName =
+                    $"{Guid.NewGuid():N}{extension}";
+
+                await using var imageStream =
+                    SelectedImage.OpenReadStream(
+                        MaxImageSize);
+
+                var oldImageUrl =
+                    sermon.ImageUrl;
+
+                sermon.ImageUrl =
+                    await BlobStorageService.UploadFileAsync(
+                        imageStream,
+                        fileName,
+                        GetImageContentType(
+                            SelectedImage.Name),
+                        "sermons/images");
+
+
+                // Delete previous image after successful
+                // upload.
+
+                if (!string.IsNullOrWhiteSpace(oldImageUrl))
+                {
+                    try
+                    {
+                        await BlobStorageService
+                            .DeleteFileByUrlAsync(
+                                oldImageUrl);
+                    }
+                    catch
+                    {
+                        // Do not fail the entire operation
+                        // if old cleanup fails.
+                    }
+                }
+            }
+
+
+            // =================================================
+            // UPLOAD VIDEO
+            // =================================================
+
+            if (SelectedVideo != null)
+            {
+                UploadStatus =
+                    "Uploading sermon video...";
+
+                StateHasChanged();
+
+                var extension =
+                    Path.GetExtension(
+                        SelectedVideo.Name)
+                    .ToLowerInvariant();
+
+                var fileName =
+                    $"{Guid.NewGuid():N}{extension}";
+
+                await using var videoStream =
+                    SelectedVideo.OpenReadStream(
+                        MaxVideoSize);
+
+                var oldVideoUrl =
+                    sermon.VideoUrl;
+
+                sermon.VideoUrl =
+                    await BlobStorageService.UploadFileAsync(
+                        videoStream,
+                        fileName,
+                        GetVideoContentType(
+                            SelectedVideo.Name),
+                        "sermons/videos");
+
+
+                // Delete old video after new video
+                // successfully uploads.
+
+                if (!string.IsNullOrWhiteSpace(oldVideoUrl))
+                {
+                    try
+                    {
+                        await BlobStorageService
+                            .DeleteFileByUrlAsync(
+                                oldVideoUrl);
+                    }
+                    catch
+                    {
+                        // Ignore cleanup failure.
+                    }
+                }
+            }
+
+
+            // =================================================
+            // SAVE FIRESTORE RECORD
+            // =================================================
+
+            UploadStatus =
+                IsEditing
+                    ? "Updating sermon..."
+                    : "Saving sermon...";
+
+            StateHasChanged();
+
+
+            if (IsEditing)
+            {
+                await AuthService
+                    .UpdateSermonAsync(sermon);
+
+                SuccessMessage =
+                    "Sermon updated successfully.";
+            }
+            else
+            {
+                // Generate a numeric ID for Firestore.
+
+                sermon.SermonId =
+                    GenerateSermonId();
+
+                await AuthService
+                    .CreateSermonAsync(sermon);
+
+                SuccessMessage =
+                    "Sermon created successfully.";
+            }
+
+
+            // =================================================
+            // REFRESH
+            // =================================================
+
+            ShowForm = false;
+
+            ResetForm();
+
+            await LoadSermonsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to save sermon: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            IsSaving = false;
+
+            UploadStatus = "";
+
+            StateHasChanged();
+        }
+    }
+
+
+    // =========================================================
+    // DELETE SERMON
+    // =========================================================
+
+    private async Task DeleteSermonAsync(Sermon sermon)
+    {
+        ClearMessages();
+
+        var confirmed =
+            await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Are you sure you want to delete \"{sermon.Title}\"?");
+
+        if (!confirmed)
+            return;
+
+
+        try
+        {
+            IsLoading = true;
+
+            StateHasChanged();
+
+
+            // Delete image.
+
+            if (!string.IsNullOrWhiteSpace(
+                sermon.ImageUrl))
+            {
+                try
+                {
+                    await BlobStorageService
+                        .DeleteFileByUrlAsync(
+                            sermon.ImageUrl);
+                }
+                catch
+                {
+                    // Continue with Firestore deletion.
+                }
+            }
+
+
+            // Delete video.
+
+            if (!string.IsNullOrWhiteSpace(
+                sermon.VideoUrl))
+            {
+                try
+                {
+                    await BlobStorageService
+                        .DeleteFileByUrlAsync(
+                            sermon.VideoUrl);
+                }
+                catch
+                {
+                    // Continue with Firestore deletion.
+                }
+            }
+
+
+            // Delete Firestore record.
+
+            await AuthService
+                .DeleteSermonAsync(
+                    sermon.SermonId);
+
+
+            Sermons.Remove(sermon);
+
+
+            SuccessMessage =
+                "Sermon deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to delete sermon: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // VIDEO
+    // =========================================================
+
+    private void OpenVideo(Sermon sermon)
+    {
+        if (string.IsNullOrWhiteSpace(
+            sermon.VideoUrl))
+        {
+            return;
+        }
+
+        SelectedSermon = sermon;
+
+        ShowVideo = true;
+    }
+
+
+    private void CloseVideo()
+    {
+        ShowVideo = false;
+
+        SelectedSermon = null;
+    }
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private void ClearSearch()
+    {
+        SearchText = "";
+    }
+
+
+    // =========================================================
+    // IMAGE ERROR
+    // =========================================================
+
+    private void HandleImageError(
+        ErrorEventArgs e)
+    {
+        // Intentionally left empty.
+        // Broken image handling can be added later.
+    }
+
+
+    // =========================================================
+    // IMAGE CONTENT TYPE
+    // =========================================================
+
+    private static string GetImageContentType(
+        string fileName)
+    {
+        var extension =
+            Path.GetExtension(fileName)
+                .ToLowerInvariant();
+
+        return extension switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
+    }
+
+
+    // =========================================================
+    // VIDEO CONTENT TYPE
+    // =========================================================
+
+    private static string GetVideoContentType(
+        string fileName)
+    {
+        var extension =
+            Path.GetExtension(fileName)
+                .ToLowerInvariant();
+
+        return extension switch
+        {
+            ".mp4" => "video/mp4",
+            ".mov" => "video/quicktime",
+            ".avi" => "video/x-msvideo",
+            ".webm" => "video/webm",
+            ".mkv" => "video/x-matroska",
+            _ => "application/octet-stream"
+        };
+    }
+
+
+    // =========================================================
+    // GENERATE ID
+    // =========================================================
+
+    private static int GenerateSermonId()
+    {
+        return Random.Shared.Next(
+            100000,
+            999999999);
+    }
+
+
+    // =========================================================
+    // PREVIEW TEXT
+    // =========================================================
+
+    private static string GetPreview(
+        string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "";
+
+        const int maxLength = 150;
+
+        var cleaned =
+            content.Replace(
+                "\r",
+                " ")
+            .Replace(
+                "\n",
+                " ")
+            .Trim();
+
+        if (cleaned.Length <= maxLength)
+            return cleaned;
+
+        return cleaned[..maxLength] + "...";
+    }
+
+
+    // =========================================================
+    // FILE SIZE
+    // =========================================================
+
+    private static string FormatFileSize(
+        long bytes)
+    {
+        if (bytes < 1024)
+            return $"{bytes} B";
+
+        if (bytes < 1024 * 1024)
+            return $"{bytes / 1024d:0.##} KB";
+
+        if (bytes < 1024 * 1024 * 1024)
+            return $"{bytes / (1024d * 1024d):0.##} MB";
+
+        return $"{bytes / (1024d * 1024d * 1024d):0.##} GB";
+    }
+
+
+    // =========================================================
+    // CLEAR MESSAGES
+    // =========================================================
+
+    private void ClearMessages()
+    {
+        SuccessMessage = "";
+
+        ErrorMessage = "";
+    }
+
+
+    // =========================================================
+    // ERROR MESSAGE
+    // =========================================================
+
+    private static string GetErrorMessage(
+        Exception exception)
+    {
+        if (exception is JSException jsException)
+            return jsException.Message;
+
+        return exception.InnerException?.Message
+            ?? exception.Message;
+    }
 }

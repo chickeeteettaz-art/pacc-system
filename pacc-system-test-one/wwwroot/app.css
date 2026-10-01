@@ -4078,3 +4078,1931 @@ textarea.form-control {
         max-height: 96vh;
     }
 }
+
+/* =========================================================
+   MANAGE SERMONS PAGE
+   ========================================================= */
+
+.sermons-page {
+    padding: 28px;
+    min-height: 100%;
+    background: var(--background, #f8fafc);
+}
+
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.page-header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 26px;
+}
+
+.page-header-content {
+    min-width: 0;
+}
+
+.breadcrumb-text {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 8px;
+    color: var(--muted, #64748b);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+    .breadcrumb-text span {
+        color: #cbd5e1;
+    }
+
+.page-header-content h1 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    color: var(--dark, #0f172a);
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+    .page-header-content h1 i {
+        color: var(--primary, #2563eb);
+        font-size: 25px;
+    }
+
+.page-header-content p {
+    margin: 7px 0 0;
+    color: var(--muted, #64748b);
+    font-size: 14px;
+}
+
+.add-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--primary, #2563eb);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
+    transition: all 0.2s ease;
+}
+
+    .add-button:hover {
+        background: var(--primary-dark, #1d4ed8);
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
+    }
+
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.custom-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 22px;
+    padding: 13px 16px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 14px;
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-alert.alert-success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.custom-alert.alert-danger {
+    border-color: #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 102px;
+    padding: 18px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    background: var(--surface, #ffffff);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 20px rgba(15, 23, 42, 0.07);
+    }
+
+.stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    border-radius: 11px;
+    font-size: 20px;
+}
+
+    .stat-icon.blue {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .stat-icon.green {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .stat-icon.orange {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .stat-icon.purple {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+.stat-information {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+    .stat-information span {
+        margin-bottom: 3px;
+        color: var(--muted, #64748b);
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .stat-information strong {
+        color: var(--dark, #0f172a);
+        font-size: 23px;
+        line-height: 1.1;
+        font-weight: 700;
+    }
+
+
+/* =========================================================
+   SEARCH TOOLBAR
+   ========================================================= */
+
+.toolbar-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+    padding: 14px 16px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 11px;
+    background: var(--surface, #ffffff);
+}
+
+.search-wrapper {
+    position: relative;
+    width: min(420px, 100%);
+}
+
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    z-index: 2;
+    color: #94a3b8;
+    font-size: 14px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.search-input {
+    width: 100%;
+    height: 40px;
+    padding: 0 40px 0 38px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    outline: none;
+    background: #f8fafc;
+    color: var(--dark, #0f172a);
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+    .search-input::placeholder {
+        color: #94a3b8;
+    }
+
+    .search-input:focus {
+        border-color: #93c5fd;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+.clear-search {
+    position: absolute;
+    top: 50%;
+    right: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #94a3b8;
+    transform: translateY(-50%);
+}
+
+    .clear-search:hover {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+.result-count {
+    color: var(--muted, #64748b);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+    .result-count strong {
+        color: var(--dark, #0f172a);
+    }
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    background: white;
+}
+
+    .loading-state .spinner-border {
+        width: 34px;
+        height: 34px;
+    }
+
+    .loading-state p {
+        margin: 14px 0 0;
+        color: var(--muted, #64748b);
+        font-size: 14px;
+    }
+
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 390px;
+    padding: 40px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 14px;
+    background: white;
+    text-align: center;
+}
+
+.empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 18px;
+    border-radius: 18px;
+    background: #eff6ff;
+    color: #94a3b8;
+    font-size: 32px;
+}
+
+.empty-state h3 {
+    margin: 0 0 7px;
+    color: var(--dark, #0f172a);
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.empty-state p {
+    margin: 0 0 20px;
+    color: var(--muted, #64748b);
+    font-size: 14px;
+}
+
+.empty-state .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   SERMON GRID
+   ========================================================= */
+
+.sermons-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+
+/* =========================================================
+   SERMON CARD
+   ========================================================= */
+
+.sermon-card {
+    overflow: hidden;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 14px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .sermon-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+    }
+
+
+/* =========================================================
+   SERMON MEDIA
+   ========================================================= */
+
+.sermon-media {
+    position: relative;
+    height: 210px;
+    overflow: hidden;
+    background: #0f172a;
+}
+
+.sermon-thumbnail {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.sermon-card:hover .sermon-thumbnail {
+    transform: scale(1.04);
+}
+
+.sermon-no-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient( 135deg, #172554, #1e3a8a );
+    color: white;
+}
+
+    .sermon-no-image i {
+        margin-bottom: 7px;
+        font-size: 42px;
+    }
+
+    .sermon-no-image span {
+        font-size: 13px;
+        opacity: 0.85;
+    }
+
+
+/* =========================================================
+   MEDIA OVERLAY
+   ========================================================= */
+
+.media-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.05);
+    transition: background 0.2s ease;
+}
+
+.sermon-card:hover .media-overlay {
+    background: rgba(15, 23, 42, 0.22);
+}
+
+.play-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--primary, #2563eb);
+    font-size: 28px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.sermon-card:hover .play-button {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.play-button:hover {
+    background: var(--primary, #2563eb);
+    color: white;
+    transform: scale(1.08) !important;
+}
+
+
+/* =========================================================
+   DATE BADGE
+   ========================================================= */
+
+.sermon-date-badge {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 7px;
+    background: rgba(15, 23, 42, 0.82);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    backdrop-filter: blur(5px);
+}
+
+
+/* =========================================================
+   SERMON BODY
+   ========================================================= */
+
+.sermon-card-body {
+    padding: 18px;
+}
+
+.sermon-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 13px;
+}
+
+    .sermon-card-header h3 {
+        margin: 0;
+        color: var(--dark, #0f172a);
+        font-size: 17px;
+        line-height: 1.35;
+        font-weight: 700;
+    }
+
+.duration-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   PASTOR
+   ========================================================= */
+
+.pastor-information {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+}
+
+.pastor-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 13px;
+}
+
+.pastor-information > div:last-child {
+    display: flex;
+    flex-direction: column;
+}
+
+.pastor-information span {
+    color: #94a3b8;
+    font-size: 10px;
+}
+
+.pastor-information strong {
+    color: #334155;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   DATE
+   ========================================================= */
+
+.sermon-date {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 0;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 11px;
+}
+
+    .sermon-date i {
+        color: #2563eb;
+    }
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.sermon-content-preview {
+    margin: 12px 0 10px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.65;
+}
+
+
+/* =========================================================
+   VIDEO STATUS
+   ========================================================= */
+
+.sermon-status {
+    margin-top: 10px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+    .status-badge.video {
+        background: #ecfdf5;
+        color: #047857;
+    }
+
+    .status-badge.no-video {
+        background: #f8fafc;
+        color: #94a3b8;
+    }
+
+
+/* =========================================================
+   CARD ACTIONS
+   ========================================================= */
+
+.sermon-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+    min-height: 35px;
+    padding: 0 10px;
+    border: 1px solid;
+    border-radius: 7px;
+    background: white;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+    .action-button.edit {
+        border-color: #bfdbfe;
+        color: #2563eb;
+    }
+
+        .action-button.edit:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+        }
+
+    .action-button.delete {
+        border-color: #fecaca;
+        color: #dc2626;
+    }
+
+        .action-button.delete:hover {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+
+/* =========================================================
+   MODAL BACKDROP
+   ========================================================= */
+
+.modal-backdrop-custom {
+    position: fixed;
+    z-index: 1050;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 25px;
+    background: rgba(15, 23, 42, 0.60);
+    backdrop-filter: blur(3px);
+}
+
+
+/* =========================================================
+   SERMON FORM MODAL
+   ========================================================= */
+
+.sermon-modal {
+    display: flex;
+    flex-direction: column;
+    width: min(720px, 100%);
+    max-height: calc(100vh - 50px);
+    overflow: hidden;
+    border-radius: 15px;
+    background: white;
+    box-shadow: 0 25px 70px rgba(15, 23, 42, 0.28);
+    animation: sermonModalIn 0.2s ease-out;
+}
+
+@keyframes sermonModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+
+.modal-header-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 22px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-heading {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 43px;
+    height: 43px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-size: 19px;
+}
+
+.modal-heading h2 {
+    margin: 0 0 3px;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modal-heading p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+    .modal-close:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+
+/* =========================================================
+   MODAL BODY
+   ========================================================= */
+
+.modal-body-custom {
+    overflow-y: auto;
+    padding: 23px;
+}
+
+.form-group {
+    margin-bottom: 19px;
+}
+
+    .form-group > label,
+    .preview-section > label,
+    .video-preview-section > label {
+        display: block;
+        margin-bottom: 7px;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+        .form-group > label span {
+            color: #dc2626;
+        }
+
+.form-control {
+    min-height: 42px;
+    border-color: #dbe2ea;
+    border-radius: 8px;
+    color: #0f172a;
+    font-size: 13px;
+}
+
+    .form-control:focus {
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.09);
+    }
+
+textarea.form-control {
+    min-height: 125px;
+    resize: vertical;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+    .input-with-icon > i {
+        position: absolute;
+        top: 50%;
+        left: 13px;
+        z-index: 2;
+        color: #94a3b8;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .input-with-icon .form-control {
+        padding-left: 37px;
+    }
+
+.form-help {
+    display: block;
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
+
+.preview-section {
+    margin-bottom: 20px;
+}
+
+.image-preview-container {
+    width: 100%;
+    max-height: 250px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #f8fafc;
+}
+
+    .image-preview-container img {
+        display: block;
+        width: 100%;
+        max-height: 250px;
+        object-fit: cover;
+    }
+
+
+/* =========================================================
+   VIDEO PREVIEW
+   ========================================================= */
+
+.video-preview-section {
+    margin-bottom: 20px;
+}
+
+.video-preview {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    border-radius: 9px;
+    background: #020617;
+}
+
+
+/* =========================================================
+   MODAL FOOTER
+   ========================================================= */
+
+.modal-footer-custom {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 22px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+    .modal-footer-custom .btn {
+        min-height: 40px;
+        padding: 0 17px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+.save-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 135px;
+}
+
+
+/* =========================================================
+   VIDEO PLAYER MODAL
+   ========================================================= */
+
+.video-modal {
+    width: min(1000px, 100%);
+    overflow: hidden;
+    border-radius: 14px;
+    background: #020617;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+.video-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 19px;
+    background: #0f172a;
+}
+
+    .video-modal-header h3 {
+        margin: 0 0 3px;
+        color: white;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .video-modal-header span {
+        color: #94a3b8;
+        font-size: 11px;
+    }
+
+    .video-modal-header .modal-close {
+        color: #cbd5e1;
+    }
+
+        .video-modal-header .modal-close:hover {
+            background: #1e293b;
+            color: white;
+        }
+
+.video-player-container {
+    width: 100%;
+    background: #000;
+}
+
+.full-video {
+    display: block;
+    width: 100%;
+    max-height: 75vh;
+    background: #000;
+}
+
+
+/* =========================================================
+   RESPONSIVE - LARGE TABLET
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+    .sermons-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE - TABLET
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+    .sermons-page {
+        padding: 20px 16px;
+    }
+
+    .page-header-section {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .add-button {
+        width: 100%;
+    }
+
+    .toolbar-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-wrapper {
+        width: 100%;
+    }
+
+    .result-count {
+        text-align: right;
+    }
+
+    .sermons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sermon-media {
+        height: 230px;
+    }
+
+    .play-button {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    .modal-backdrop-custom {
+        align-items: flex-start;
+        padding: 15px;
+    }
+
+    .sermon-modal {
+        max-height: calc(100vh - 30px);
+    }
+}
+
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+   ========================================================= */
+
+@media (max-width: 576px) {
+
+    .sermons-page {
+        padding: 15px 12px;
+    }
+
+    .page-header-content h1 {
+        font-size: 23px;
+    }
+
+    .page-header-content p {
+        font-size: 13px;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .stat-card {
+        min-height: 82px;
+        padding: 14px;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        flex-basis: 42px;
+    }
+
+    .stat-information strong {
+        font-size: 20px;
+    }
+
+    .toolbar-card {
+        padding: 12px;
+    }
+
+    .result-count {
+        text-align: left;
+    }
+
+    .sermon-media {
+        height: 210px;
+    }
+
+    .sermon-card-body {
+        padding: 15px;
+    }
+
+    .sermon-card-header h3 {
+        font-size: 16px;
+    }
+
+    .sermon-actions {
+        flex-direction: column;
+    }
+
+    .action-button {
+        width: 100%;
+    }
+
+    .modal-backdrop-custom {
+        padding: 8px;
+    }
+
+    .sermon-modal {
+        max-height: calc(100vh - 16px);
+        border-radius: 12px;
+    }
+
+    .modal-header-custom {
+        padding: 16px;
+    }
+
+    .modal-body-custom {
+        padding: 17px;
+    }
+
+    .modal-footer-custom {
+        padding: 12px 16px;
+    }
+
+        .modal-footer-custom .btn {
+            flex: 1;
+        }
+
+    .video-modal {
+        border-radius: 10px;
+    }
+
+    .video-modal-header {
+        padding: 13px 15px;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 380px) {
+
+    .sermons-page {
+        padding: 12px 9px;
+    }
+
+    .page-header-content h1 {
+        font-size: 21px;
+    }
+
+    .sermon-media {
+        height: 185px;
+    }
+
+    .sermon-date-badge {
+        right: 8px;
+        bottom: 8px;
+        font-size: 9px;
+    }
+
+    .modal-heading {
+        gap: 9px;
+    }
+
+    .modal-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 16px;
+    }
+
+    .modal-heading h2 {
+        font-size: 16px;
+    }
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.modal-body-custom::-webkit-scrollbar {
+    width: 7px;
+}
+
+.modal-body-custom::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.modal-body-custom::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: #cbd5e1;
+}
+
+    .modal-body-custom::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+/* =========================================================
+   PRAYER REQUEST ADMIN PAGE
+   ========================================================= */
+
+.prayer-admin-page {
+    padding: 30px;
+    max-width: 1500px;
+    margin: 0 auto;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.prayer-page-header {
+    margin-bottom: 28px;
+}
+
+.prayer-header-content {
+    width: 100%;
+}
+
+.prayer-page-header .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+    .prayer-page-header .breadcrumb i {
+        font-size: 10px;
+        color: #94a3b8;
+    }
+
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.title-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20);
+}
+
+.title-row h1 {
+    margin: 0 0 5px;
+    font-size: 30px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.title-row p {
+    margin: 0;
+    color: #64748b;
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.prayer-alert {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    padding: 15px 18px;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.prayer-alert-danger {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #be123c;
+}
+
+.prayer-alert-success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+}
+
+.prayer-alert > i {
+    font-size: 18px;
+}
+
+.alert-close {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-size: 16px;
+    opacity: .7;
+}
+
+    .alert-close:hover {
+        opacity: 1;
+    }
+
+
+/* =========================================================
+   STATISTICS
+   ========================================================= */
+
+.prayer-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.prayer-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all .2s ease;
+}
+
+    .prayer-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(15, 23, 42, .07);
+    }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+    .stat-icon.blue {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .stat-icon.orange {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .stat-icon.green {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .stat-icon.red {
+        background: #fff1f2;
+        color: #dc2626;
+    }
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .stat-content span {
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    .stat-content strong {
+        color: #0f172a;
+        font-size: 25px;
+    }
+
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+
+.prayer-toolbar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 22px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+    .search-wrapper > i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+.search-input {
+    width: 100%;
+    height: 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0 42px;
+    outline: none;
+    color: #334155;
+    background: #f8fafc;
+    font-size: 14px;
+}
+
+    .search-input:focus {
+        border-color: #2563eb;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+    }
+
+.clear-search {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.filter-wrapper {
+    position: relative;
+}
+
+    .filter-wrapper > i {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        pointer-events: none;
+    }
+
+.filter-select {
+    height: 44px;
+    min-width: 160px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0 35px;
+    background: #ffffff;
+    color: #334155;
+    outline: none;
+    cursor: pointer;
+}
+
+.refresh-button {
+    height: 44px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0 17px;
+    color: #334155;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .refresh-button:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.prayer-loading {
+    min-height: 300px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+    .prayer-loading .spinner-border {
+        width: 35px;
+        height: 35px;
+        color: #2563eb;
+    }
+
+    .prayer-loading p {
+        margin-top: 15px;
+        color: #64748b;
+    }
+
+.spin {
+    animation: prayer-spin 1s linear infinite;
+}
+
+@keyframes prayer-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.prayer-empty {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    min-height: 330px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 40px;
+}
+
+.empty-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 20px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    margin-bottom: 17px;
+}
+
+.prayer-empty h3 {
+    color: #0f172a;
+    margin: 0 0 8px;
+    font-size: 20px;
+}
+
+.prayer-empty p {
+    color: #64748b;
+    margin: 0;
+}
+
+
+/* =========================================================
+   REQUEST LIST
+   ========================================================= */
+
+.prayer-request-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.prayer-request-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all .2s ease;
+}
+
+    .prayer-request-card:hover {
+        box-shadow: 0 8px 28px rgba(15, 23, 42, .07);
+        border-color: #dbe4ef;
+    }
+
+
+/* =========================================================
+   CARD HEADER
+   ========================================================= */
+
+.request-card-header {
+    padding: 19px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.request-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar {
+    width: 43px;
+    height: 43px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+    .user-details strong {
+        color: #0f172a;
+        font-size: 14px;
+    }
+
+    .user-details span {
+        color: #94a3b8;
+        font-size: 12px;
+    }
+
+        .user-details span i {
+            margin-right: 4px;
+        }
+
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+.request-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.status-approved {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.status-answered {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.status-rejected {
+    background: #fff1f2;
+    color: #be123c;
+}
+
+.action-button {
+    width: 35px;
+    height: 35px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+    .action-button:hover {
+        background: #f8fafc;
+        color: #0f172a;
+    }
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
+
+.request-content {
+    padding: 22px;
+}
+
+    .request-content h3 {
+        margin: 0 0 9px;
+        color: #0f172a;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .request-content p {
+        margin: 0;
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+    }
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.request-card-footer {
+    padding: 14px 22px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.request-meta {
+    color: #64748b;
+    font-size: 12px;
+}
+
+    .request-meta i {
+        margin-right: 5px;
+    }
+
+.status-control {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+    .status-control label {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+.status-select {
+    height: 35px;
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+    outline: none;
+    cursor: pointer;
+}
+
+.select-pending {
+    color: #c2410c;
+    background: #fff7ed;
+}
+
+.select-approved {
+    color: #1d4ed8;
+    background: #eff6ff;
+}
+
+.select-answered {
+    color: #15803d;
+    background: #f0fdf4;
+}
+
+.select-rejected {
+    color: #be123c;
+    background: #fff1f2;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+    .prayer-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+
+    .prayer-admin-page {
+        padding: 20px 15px;
+    }
+
+    .title-row h1 {
+        font-size: 25px;
+    }
+
+    .prayer-stat-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .prayer-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-select,
+    .refresh-button {
+        width: 100%;
+    }
+
+    .request-card-header {
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .request-actions {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .request-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+
+@media (max-width: 500px) {
+
+    .prayer-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .title-icon {
+        width: 45px;
+        height: 45px;
+    }
+
+    .title-row h1 {
+        font-size: 22px;
+    }
+
+    .request-card-header {
+        padding: 16px;
+    }
+
+    .request-content {
+        padding: 16px;
+    }
+
+    .request-card-footer {
+        padding: 13px 16px;
+    }
+}
+
