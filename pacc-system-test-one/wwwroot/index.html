@@ -80,6 +80,7 @@
                     collection,
                     getDocs,
                     getDoc,
+                    setDoc,
                     addDoc,
                     updateDoc,
                     deleteDoc,
@@ -1157,6 +1158,195 @@ window.firebaseAuth.deleteMessage = async function (messageId) {
         );
 
     await deleteDoc(messageRef);
+
+    return true;
+};
+
+//====================
+//outreach methods
+//=======================
+window.firebaseAuth.getOutreachPrograms = async function () {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot =
+        await getDocs(
+            collection(db, "outreachPrograms")
+        );
+
+    const programs = [];
+
+    snapshot.forEach((documentSnapshot) => {
+
+        const data =
+            documentSnapshot.data();
+
+        let outreachId =
+            parseInt(documentSnapshot.id);
+
+        if (isNaN(outreachId)) {
+            outreachId =
+                Number(data.outreachId || 0);
+        }
+
+
+        let programDate = null;
+
+        if (data.date) {
+
+            if (typeof data.date.toDate === "function") {
+
+                programDate =
+                    data.date.toDate().toISOString();
+
+            } else {
+
+                programDate =
+                    data.date;
+            }
+        }
+
+
+        programs.push({
+
+            outreachId: outreachId,
+
+            title:
+                data.title || "",
+
+            content:
+                data.content || "",
+
+            description:
+                data.description || "",
+
+            date:
+                programDate,
+
+            imageUrl:
+                data.imageUrl || ""
+
+        });
+
+    });
+
+
+    return programs;
+};
+
+window.firebaseAuth.createOutreachProgram = async function (program) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    if (!program) {
+        throw new Error("Program data is required.");
+    }
+
+
+    const documentId =
+        program.outreachId.toString();
+
+
+    const programRef =
+        doc(
+            db,
+            "outreachPrograms",
+            documentId
+        );
+
+
+    await setDoc(
+        programRef,
+        {
+            outreachId:
+                program.outreachId,
+
+            title:
+                program.title || "",
+
+            content:
+                program.content || "",
+
+            description:
+                program.description || "",
+
+            date:
+                program.date || null,
+
+            imageUrl:
+                program.imageUrl || ""
+        }
+    );
+
+
+    return true;
+};
+
+window.firebaseAuth.updateOutreachProgram = async function (program) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    if (!program) {
+        throw new Error("Program data is required.");
+    }
+
+
+    const programRef =
+        doc(
+            db,
+            "outreachPrograms",
+            program.outreachId.toString()
+        );
+
+
+    await updateDoc(
+        programRef,
+        {
+            title:
+                program.title || "",
+
+            content:
+                program.content || "",
+
+            description:
+                program.description || "",
+
+            date:
+                program.date || null,
+
+            imageUrl:
+                program.imageUrl || ""
+        }
+    );
+
+
+    return true;
+};
+
+window.firebaseAuth.deleteOutreachProgram = async function (outreachId) {
+
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+
+    const programRef =
+        doc(
+            db,
+            "outreachPrograms",
+            outreachId.toString()
+        );
+
+
+    await deleteDoc(programRef);
 
     return true;
 };

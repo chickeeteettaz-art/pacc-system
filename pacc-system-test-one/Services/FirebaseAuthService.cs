@@ -588,6 +588,93 @@ namespace pacc_system_test_one.Services
                 throw;
             }
         }
+
+        //outreach methods
+        public async Task<List<OutreachProgram>> GetOutreachProgramsAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var result =
+                    await _jsRuntime.InvokeAsync<List<OutreachProgram>>(
+                        "firebaseAuth.getOutreachPrograms");
+
+                return result ?? new List<OutreachProgram>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase getOutreachPrograms error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task CreateOutreachProgramAsync(
+            OutreachProgram program)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.createOutreachProgram",
+                    program);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase createOutreachProgram error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task UpdateOutreachProgramAsync(
+            OutreachProgram program)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateOutreachProgram",
+                    program);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase updateOutreachProgram error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
+        public async Task DeleteOutreachProgramAsync(
+            int outreachId)
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.deleteOutreachProgram",
+                    outreachId);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase deleteOutreachProgram error: {ex.Message}");
+
+                throw;
+            }
+        }
+
+
         // =====================================================
         // LOGOUT
         // =====================================================

@@ -1,5 +1,1224 @@
-﻿<h3>ManageOutreach</h3>
+﻿@page "/admin/outreach"
+@layout AdminLayout
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject IBlobStorageService BlobStorage
+@inject IJSRuntime JS
+
+<PageTitle>Manage Outreach Programs</PageTitle>
+
+<div class="outreach-page">
+
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
+
+    <div class="page-header-section">
+
+        <div>
+            <div class="breadcrumb-text">
+                Administration
+                <span>/</span>
+                Outreach Programs
+            </div>
+
+            <h1>
+                <i class="bi bi-heart-pulse-fill"></i>
+                Outreach Programs
+            </h1>
+
+            <p>
+                Manage church outreach programs and community initiatives.
+            </p>
+        </div>
+
+        <button class="btn btn-primary add-button"
+                @onclick="OpenCreateForm">
+
+            <i class="bi bi-plus-lg"></i>
+            Add Outreach Program
+
+        </button>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- ALERTS -->
+    <!-- ===================================================== -->
+    @if (!string.IsNullOrWhiteSpace(SuccessMessage))
+    {
+        <div class="alert alert-success custom-alert">
+
+            <i class="bi bi-check-circle-fill"></i>
+
+            <span>@SuccessMessage</span>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearSuccess">
+            </button>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="alert alert-danger custom-alert">
+
+            <i class="bi bi-exclamation-triangle-fill"></i>
+
+            <span>@ErrorMessage</span>
+
+            <button type="button"
+                    class="btn-close"
+                    @onclick="ClearError">
+            </button>
+
+        </div>
+    }
+
+
+    <!-- ===================================================== -->
+    <!-- STATISTICS -->
+    <!-- ===================================================== -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-icon blue">
+                <i class="bi bi-heart-fill"></i>
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Total Programs
+                </span>
+
+                <strong>
+                    @OutreachPrograms.Count
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon green">
+                <i class="bi bi-calendar-check-fill"></i>
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Upcoming
+                </span>
+
+                <strong>
+                    @UpcomingCount
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon orange">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    Past Programs
+                </span>
+
+                <strong>
+                    @PastCount
+                </strong>
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-icon purple">
+                <i class="bi bi-image-fill"></i>
+            </div>
+
+            <div>
+                <span class="stat-label">
+                    With Images
+                </span>
+
+                <strong>
+                    @WithImagesCount
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- SEARCH TOOLBAR -->
+    <!-- ===================================================== -->
+
+    <div class="toolbar-card">
+
+        <div class="search-container">
+
+            <i class="bi bi-search"></i>
+
+            <input type="text"
+                   class="search-input"
+                   placeholder="Search outreach programs..."
+                   @bind="SearchText"
+                   @bind:event="oninput" />
+
+            @if (!string.IsNullOrWhiteSpace(SearchText))
+            {
+                <button class="clear-search"
+                        type="button"
+                        @onclick="ClearSearch">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+            }
+
+        </div>
+
+        <div class="program-count">
+
+            Showing
+            <strong>@FilteredPrograms.Count</strong>
+            program@(FilteredPrograms.Count == 1 ? "" : "s")
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- LOADING -->
+    <!-- ===================================================== -->
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+
+            <div class="spinner-border text-primary"></div>
+
+            <p>
+                Loading outreach programs...
+            </p>
+
+        </div>
+    }
+    else if (!FilteredPrograms.Any())
+    {
+        <!-- ================================================= -->
+        <!-- EMPTY STATE -->
+        <!-- ================================================= -->
+
+        <div class="empty-state">
+
+            <div class="empty-icon">
+                <i class="bi bi-heart-pulse"></i>
+            </div>
+
+            @if (string.IsNullOrWhiteSpace(SearchText))
+            {
+                <h3>
+                    No outreach programs found
+                </h3>
+
+                <p>
+                    There are currently no outreach programs.
+                </p>
+
+                <button class="btn btn-primary"
+                        @onclick="OpenCreateForm">
+
+                    <i class="bi bi-plus-lg"></i>
+                    Add First Program
+
+                </button>
+            }
+            else
+            {
+                <h3>
+                    No matching programs
+                </h3>
+
+                <p>
+                    No outreach programs match your search.
+                </p>
+
+                <button class="btn btn-outline-primary"
+                        @onclick="ClearSearch">
+
+                    Clear Search
+
+                </button>
+            }
+
+        </div>
+    }
+    else
+    {
+        <!-- ================================================= -->
+        <!-- PROGRAM GRID -->
+        <!-- ================================================= -->
+
+        <div class="outreach-grid">
+
+            @foreach (var program in FilteredPrograms)
+            {
+                <div class="program-card">
+
+                    <!-- IMAGE -->
+
+                    <div class="program-image-container">
+
+                        @if (!string.IsNullOrWhiteSpace(program.ImageUrl))
+                        {
+                            <img src="@program.ImageUrl"
+                                 alt="@program.Title"
+                                 class="program-image" />
+                        }
+                        else
+                        {
+                            <div class="no-image">
+
+                                <i class="bi bi-image"></i>
+
+                                <span>
+                                    No Image
+                                </span>
+
+                            </div>
+                        }
+
+                        <div class="date-badge">
+
+                            <i class="bi bi-calendar3"></i>
+
+                            @program.Date.ToString("dd MMM yyyy")
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONTENT -->
+
+                    <div class="program-content">
+
+                        <h3>
+                            @program.Title
+                        </h3>
+
+                        @if (!string.IsNullOrWhiteSpace(program.Description))
+                        {
+                            <p class="program-description">
+                                @program.Description
+                            </p>
+                        }
+
+                        <div class="program-date">
+
+                            <i class="bi bi-clock"></i>
+
+                            @program.Date.ToString("dd MMMM yyyy, HH:mm")
+
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(program.Content))
+                        {
+                            <div class="content-preview">
+                                @GetContentPreview(program.Content)
+                            </div>
+                        }
+
+                        <div class="program-actions">
+
+                            <button class="btn btn-outline-primary"
+                                    @onclick="() => OpenEditForm(program)">
+
+                                <i class="bi bi-pencil"></i>
+                                Edit
+
+                            </button>
+
+                            <button class="btn btn-outline-danger"
+                                    @onclick="() => DeleteProgramAsync(program)">
+
+                                <i class="bi bi-trash"></i>
+                                Delete
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- CREATE / EDIT MODAL -->
+<!-- ========================================================= -->
+@if (ShowForm)
+{
+    <div class="modal-backdrop-custom">
+
+        <div class="outreach-modal">
+
+            <!-- MODAL HEADER -->
+
+            <div class="modal-header-custom">
+
+                <div class="modal-title-area">
+
+                    <div class="modal-icon">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+
+                    <div>
+
+                        <h2>
+                            @(IsEditing
+                                ? "Edit Outreach Program"
+                                : "Add Outreach Program")
+                        </h2>
+
+                        <p>
+                            @(IsEditing
+                                ? "Update the outreach program."
+                                : "Create a new outreach program.")
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button type="button"
+                        class="modal-close"
+                        @onclick="CloseForm">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- MODAL BODY -->
+
+            <div class="modal-body-custom">
+
+                <!-- TITLE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Program Title
+                        <span>*</span>
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           placeholder="e.g. Community Food Drive"
+                           @bind="FormTitle" />
+
+                </div>
+
+
+                <!-- DATE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Outreach Date & Time
+                        <span>*</span>
+                    </label>
+
+                    <input type="datetime-local"
+                           class="form-control"
+                           @bind="FormDate"
+                           @bind:format="yyyy-MM-ddTHH:mm" />
+
+                    <small class="form-help">
+                        Select the date and time of the outreach program.
+                    </small>
+
+                </div>
+
+
+                <!-- DESCRIPTION -->
+
+                <div class="form-group">
+
+                    <label>
+                        Short Description
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="3"
+                              placeholder="Enter a short description..."
+                              @bind="FormDescription">
+                    </textarea>
+
+                </div>
+
+
+                <!-- CONTENT -->
+
+                <div class="form-group">
+
+                    <label>
+                        Program Details
+                    </label>
+
+                    <textarea class="form-control"
+                              rows="6"
+                              placeholder="Enter the full details of the outreach program..."
+                              @bind="FormContent">
+                    </textarea>
+
+                </div>
+
+
+                <!-- IMAGE -->
+
+                <div class="form-group">
+
+                    <label>
+                        Program Image
+                    </label>
+
+                    <InputFile OnChange="HandleImageSelected"
+                               class="form-control"
+                               accept="image/*" />
+
+                    <small class="form-help">
+                        Maximum image size: 10 MB.
+                        Images are stored in Azure Blob Storage.
+                    </small>
+
+                </div>
+
+
+                <!-- IMAGE PREVIEW -->
+                @if (!string.IsNullOrWhiteSpace(PreviewImageUrl))
+                {
+                    <div class="preview-section">
+
+                        <label>
+                            Image Preview
+                        </label>
+
+                        <div class="preview-container">
+
+                            <img src="@PreviewImageUrl"
+                                 alt="Outreach image preview" />
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+
+            <!-- MODAL FOOTER -->
+
+            <div class="modal-footer-custom">
+
+                <button type="button"
+                        class="btn btn-light"
+                        @onclick="CloseForm"
+                        disabled="@IsSaving">
+
+                    Cancel
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary save-button"
+                        @onclick="SaveProgramAsync"
+                        disabled="@IsSaving">
+
+                    @if (IsSaving)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+
+                        <span>
+                            Saving...
+                        </span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-lg"></i>
+
+                        <span>
+                            @(IsEditing
+                                ? "Update Program"
+                                : "Create Program")
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+}
+
 
 @code {
 
+    // =========================================================
+    // DATA
+    // =========================================================
+
+    private List<OutreachProgram> OutreachPrograms = new();
+
+    private bool IsLoading = true;
+    private bool IsSaving = false;
+
+    private string SearchText = "";
+
+    private string SuccessMessage = "";
+    private string ErrorMessage = "";
+
+
+    // =========================================================
+    // FORM
+    // =========================================================
+
+    private bool ShowForm;
+    private bool IsEditing;
+
+    private int EditingId;
+
+    private string FormTitle = "";
+    private string FormDescription = "";
+    private string FormContent = "";
+
+    /*
+     * IMPORTANT:
+     *
+     * This is DateTime, not string.
+     *
+     * It directly corresponds to:
+     *
+     * OutreachProgram.Date
+     */
+    private DateTime FormDate = DateTime.Now;
+
+    private IBrowserFile? SelectedImage;
+
+    private string PreviewImageUrl = "";
+
+    private string ExistingImageUrl = "";
+
+
+    // =========================================================
+    // FILTERED PROGRAMS
+    // =========================================================
+
+    private List<OutreachProgram> FilteredPrograms =>
+        OutreachPrograms
+            .Where(program =>
+                string.IsNullOrWhiteSpace(SearchText)
+                ||
+                program.Title.Contains(
+                    SearchText,
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                program.Description.Contains(
+                    SearchText,
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                program.Content.Contains(
+                    SearchText,
+                    StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(program => program.Date)
+            .ToList();
+
+
+    // =========================================================
+    // STATISTICS
+    // =========================================================
+
+    private int UpcomingCount =>
+        OutreachPrograms.Count(
+            program => program.Date >= DateTime.Now);
+
+    private int PastCount =>
+        OutreachPrograms.Count(
+            program => program.Date < DateTime.Now);
+
+    private int WithImagesCount =>
+        OutreachPrograms.Count(
+            program => !string.IsNullOrWhiteSpace(
+                program.ImageUrl));
+
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProgramsAsync();
+    }
+
+
+    // =========================================================
+    // LOAD
+    // =========================================================
+
+    private async Task LoadProgramsAsync()
+    {
+        IsLoading = true;
+        ErrorMessage = "";
+
+        try
+        {
+            OutreachPrograms =
+                await AuthService.GetOutreachProgramsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to load outreach programs: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+
+    // =========================================================
+    // CREATE FORM
+    // =========================================================
+
+    private void OpenCreateForm()
+    {
+        IsEditing = false;
+
+        EditingId = 0;
+
+        FormTitle = "";
+
+        FormDescription = "";
+
+        FormContent = "";
+
+        /*
+         * Direct DateTime assignment.
+         */
+        FormDate = DateTime.Now.AddHours(1);
+
+        SelectedImage = null;
+
+        PreviewImageUrl = "";
+
+        ExistingImageUrl = "";
+
+        ErrorMessage = "";
+
+        SuccessMessage = "";
+
+        ShowForm = true;
+    }
+
+
+    // =========================================================
+    // EDIT FORM
+    // =========================================================
+
+    private void OpenEditForm(
+        OutreachProgram program)
+    {
+        IsEditing = true;
+
+        EditingId =
+            program.OutreachId;
+
+        FormTitle =
+            program.Title;
+
+        FormDescription =
+            program.Description;
+
+        FormContent =
+            program.Content;
+
+        /*
+         * Direct DateTime assignment.
+         */
+        FormDate =
+            program.Date;
+
+        ExistingImageUrl =
+            program.ImageUrl;
+
+        PreviewImageUrl =
+            program.ImageUrl;
+
+        SelectedImage = null;
+
+        ErrorMessage = "";
+
+        SuccessMessage = "";
+
+        ShowForm = true;
+    }
+
+
+    // =========================================================
+    // CLOSE
+    // =========================================================
+
+    private void CloseForm()
+    {
+        if (IsSaving)
+            return;
+
+        ShowForm = false;
+    }
+
+
+    // =========================================================
+    // IMAGE SELECTION
+    // =========================================================
+
+    private async Task HandleImageSelected(
+        InputFileChangeEventArgs e)
+    {
+        try
+        {
+            SelectedImage = e.File;
+
+            if (SelectedImage == null)
+                return;
+
+            if (!SelectedImage.ContentType
+                .StartsWith("image/",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                ErrorMessage =
+                    "Please select a valid image file.";
+
+                SelectedImage = null;
+
+                return;
+            }
+
+            using var stream =
+                SelectedImage.OpenReadStream(
+                    maxAllowedSize: 10 * 1024 * 1024);
+
+            using var memoryStream =
+                new MemoryStream();
+
+            await stream.CopyToAsync(memoryStream);
+
+            var bytes =
+                memoryStream.ToArray();
+
+            PreviewImageUrl =
+                $"data:{SelectedImage.ContentType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to preview image: {ex.Message}";
+
+            SelectedImage = null;
+        }
+    }
+
+
+    // =========================================================
+    // SAVE
+    // =========================================================
+
+    private async Task SaveProgramAsync()
+    {
+        ErrorMessage = "";
+        SuccessMessage = "";
+
+        if (string.IsNullOrWhiteSpace(FormTitle))
+        {
+            ErrorMessage =
+                "Please enter an outreach program title.";
+
+            return;
+        }
+
+        if (FormDate == default)
+        {
+            ErrorMessage =
+                "Please select an outreach date.";
+
+            return;
+        }
+
+        IsSaving = true;
+
+        try
+        {
+            string imageUrl =
+                ExistingImageUrl;
+
+
+            // =================================================
+            // IMAGE UPLOAD
+            // =================================================
+
+            if (SelectedImage != null)
+            {
+                var extension =
+                    Path.GetExtension(
+                        SelectedImage.Name);
+
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    extension = ".jpg";
+                }
+
+                var fileName =
+                    $"{Guid.NewGuid():N}{extension}";
+
+                await using var stream =
+                    SelectedImage.OpenReadStream(
+                        maxAllowedSize:
+                        10 * 1024 * 1024);
+
+                imageUrl =
+                    await BlobStorage.UploadFileAsync(
+                        stream,
+                        fileName,
+                        SelectedImage.ContentType,
+                        "outreach");
+            }
+
+
+            // =================================================
+            // CREATE
+            // =================================================
+
+            if (!IsEditing)
+            {
+                var program =
+                    new OutreachProgram
+                    {
+                        OutreachId =
+                            GetNextId(),
+
+                        Title =
+                            FormTitle.Trim(),
+
+                        Content =
+                            FormContent.Trim(),
+
+                        Description =
+                            FormDescription.Trim(),
+
+                        Date =
+                            FormDate,
+
+                        ImageUrl =
+                            imageUrl
+                    };
+
+                await AuthService
+                    .CreateOutreachProgramAsync(
+                        program);
+
+                OutreachPrograms.Add(program);
+
+                SuccessMessage =
+                    "Outreach program created successfully.";
+            }
+
+
+            // =================================================
+            // UPDATE
+            // =================================================
+
+            else
+            {
+                var program =
+                    OutreachPrograms.FirstOrDefault(
+                        p => p.OutreachId == EditingId);
+
+                if (program == null)
+                {
+                    ErrorMessage =
+                        "The outreach program could not be found.";
+
+                    return;
+                }
+
+
+                // Delete previous image if a new
+                // image was selected.
+
+                if (SelectedImage != null
+                    &&
+                    !string.IsNullOrWhiteSpace(
+                        ExistingImageUrl))
+                {
+                    var oldBlobName =
+                        ExtractBlobName(
+                            ExistingImageUrl);
+
+                    if (!string.IsNullOrWhiteSpace(
+                        oldBlobName))
+                    {
+                        try
+                        {
+                            await BlobStorage
+                                .DeleteFileAsync(
+                                    oldBlobName);
+                        }
+                        catch
+                        {
+                            // Do not prevent the
+                            // database update.
+                        }
+                    }
+                }
+
+
+                program.Title =
+                    FormTitle.Trim();
+
+                program.Content =
+                    FormContent.Trim();
+
+                program.Description =
+                    FormDescription.Trim();
+
+                program.Date =
+                    FormDate;
+
+                program.ImageUrl =
+                    imageUrl;
+
+
+                await AuthService
+                    .UpdateOutreachProgramAsync(
+                        program);
+
+                SuccessMessage =
+                    "Outreach program updated successfully.";
+            }
+
+
+            ShowForm = false;
+
+            await LoadProgramsAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to save outreach program: {ex.Message}";
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+
+    private async Task DeleteProgramAsync(
+        OutreachProgram program)
+    {
+        ErrorMessage = "";
+        SuccessMessage = "";
+
+        var confirmed =
+            await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Are you sure you want to delete '{program.Title}'?");
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            // Delete Azure image.
+
+            if (!string.IsNullOrWhiteSpace(
+                    program.ImageUrl))
+            {
+                var blobName =
+                    ExtractBlobName(
+                        program.ImageUrl);
+
+                if (!string.IsNullOrWhiteSpace(
+                        blobName))
+                {
+                    try
+                    {
+                        await BlobStorage
+                            .DeleteFileAsync(
+                                blobName);
+                    }
+                    catch
+                    {
+                        // Continue with Firestore deletion.
+                    }
+                }
+            }
+
+
+            // Delete Firestore document.
+
+            await AuthService
+                .DeleteOutreachProgramAsync(
+                    program.OutreachId);
+
+
+            OutreachPrograms.Remove(program);
+
+            SuccessMessage =
+                "Outreach program deleted successfully.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage =
+                $"Unable to delete outreach program: {ex.Message}";
+        }
+    }
+
+
+    // =========================================================
+    // GET NEXT ID
+    // =========================================================
+
+    private int GetNextId()
+    {
+        if (!OutreachPrograms.Any())
+            return 1;
+
+        return OutreachPrograms.Max(
+            program => program.OutreachId) + 1;
+    }
+
+
+    // =========================================================
+    // CONTENT PREVIEW
+    // =========================================================
+
+    private string GetContentPreview(
+        string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "";
+
+        var value =
+            content.Trim();
+
+        return value.Length <= 140
+            ? value
+            : value[..140] + "...";
+    }
+
+
+    // =========================================================
+    // SEARCH
+    // =========================================================
+
+    private void ClearSearch()
+    {
+        SearchText = "";
+    }
+
+
+    // =========================================================
+    // ALERTS
+    // =========================================================
+
+    private void ClearSuccess()
+    {
+        SuccessMessage = "";
+    }
+
+    private void ClearError()
+    {
+        ErrorMessage = "";
+    }
+
+
+    // =========================================================
+    // AZURE BLOB NAME
+    // =========================================================
+
+    private string ExtractBlobName(
+        string imageUrl)
+    {
+        try
+        {
+            if (!Uri.TryCreate(
+                    imageUrl,
+                    UriKind.Absolute,
+                    out var uri))
+            {
+                return imageUrl;
+            }
+
+            var path =
+                Uri.UnescapeDataString(
+                    uri.AbsolutePath);
+
+            const string container =
+                "/paccimages/";
+
+            var index =
+                path.IndexOf(
+                    container,
+                    StringComparison.OrdinalIgnoreCase);
+
+            if (index >= 0)
+            {
+                return path.Substring(
+                    index + container.Length);
+            }
+
+            return Path.GetFileName(path);
+        }
+        catch
+        {
+            return "";
+        }
+    }
 }

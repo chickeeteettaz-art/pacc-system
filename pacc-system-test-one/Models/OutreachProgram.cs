@@ -1,5 +1,4 @@
-﻿
-namespace pacc_system_test_one.Models
+﻿namespace pacc_system_test_one.Models
 {
     public class OutreachProgram
     {
@@ -9,7 +8,7 @@ namespace pacc_system_test_one.Models
 
         public string Content { get; set; } = "";
 
-        public DateTime Date { get; set; }
+        public DateTime Date { get; set; } = DateTime.Now;
 
         public string ImageUrl { get; set; } = "";
 
