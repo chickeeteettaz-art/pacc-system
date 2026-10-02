@@ -1,5 +1,523 @@
-﻿<h3>Sermons</h3>
+﻿@page "/user/sermons"
+
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Sermons</PageTitle>
+
+<div class="sermons-page">
+
+    <!-- ===================================================== -->
+    <!-- PAGE HEADER -->
+    <!-- ===================================================== -->
+
+    <div class="sermons-page-header">
+
+        <div>
+
+            <div class="sermons-breadcrumb">
+
+                <span>Christian Centre</span>
+
+                <i class="bi bi-chevron-right"></i>
+
+                <span>Sermons</span>
+
+            </div>
+
+            <div class="sermons-title-row">
+
+                <div class="sermons-title-icon">
+                    <i class="bi bi-play-circle-fill"></i>
+                </div>
+
+                <div>
+
+                    <h1>Sermons</h1>
+
+                    <p>
+                        Watch and listen to messages from Christian Centre.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        @if (!isLoading && !hasError)
+        {
+            <div class="sermons-count">
+
+                <i class="bi bi-collection-play"></i>
+
+                <span>
+                    @sermons.Count
+                    @(sermons.Count == 1 ? "Sermon" : "Sermons")
+                </span>
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- LOADING -->
+    <!-- ===================================================== -->
+
+    @if (isLoading)
+    {
+        <div class="sermons-state-card">
+
+            <div class="sermons-loading-icon">
+
+                <div class="spinner-border text-primary"
+                     role="status">
+
+                    <span class="visually-hidden">
+                        Loading...
+                    </span>
+
+                </div>
+
+            </div>
+
+            <h3>
+                Loading sermons
+            </h3>
+
+            <p>
+                Please wait while we retrieve the latest sermons.
+            </p>
+
+        </div>
+    }
+
+   
+    <!-- ===================================================== -->
+    <!-- EMPTY -->
+    <!-- ===================================================== -->
+
+    @if (sermons.Count == 0)
+    {
+        <div class="sermons-state-card">
+
+            <div class="sermons-empty-icon">
+
+                <i class="bi bi-play-btn"></i>
+
+            </div>
+
+            <h3>
+                No sermons available
+            </h3>
+
+            <p>
+                There are currently no sermons available.
+                Please check again later.
+            </p>
+
+        </div>
+    }
+
+    <!-- ===================================================== -->
+    <!-- SERMONS -->
+    <!-- ===================================================== -->
+
+    @if (sermons.Count != 0)
+    {
+        <div class="sermons-grid">
+
+            @foreach (var sermon in sermons)
+            {
+                <article class="sermon-card">
+
+                    <!-- IMAGE -->
+
+                    <button type="button"
+                            class="sermon-image-button"
+                            @onclick="() => OpenSermon(sermon)"
+                            aria-label="Watch @sermon.Title">
+
+                        <div class="sermon-image-container">
+
+                            @if (!string.IsNullOrWhiteSpace(sermon.ImageUrl))
+                            {
+                                <img src="@sermon.ImageUrl"
+                                     alt="@sermon.Title"
+                                     class="sermon-image"
+                                     loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="sermon-image-placeholder">
+
+                                    <i class="bi bi-play-circle"></i>
+
+                                </div>
+                            }
+
+                            <div class="sermon-image-overlay">
+
+                                <div class="sermon-play-button">
+
+                                    <i class="bi bi-play-fill"></i>
+
+                                </div>
+
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(sermon.Duration))
+                            {
+                                <span class="sermon-duration">
+                                    @sermon.Duration
+                                </span>
+                            }
+
+                        </div>
+
+                    </button>
+
+
+                    <!-- CONTENT -->
+
+                    <div class="sermon-card-content">
+
+                        <div class="sermon-date">
+
+                            <i class="bi bi-calendar3"></i>
+
+                            <span>
+                                @sermon.Date.ToString("dd MMM yyyy")
+                            </span>
+
+                        </div>
+
+
+                        <h2>
+                            @sermon.Title
+                        </h2>
+
+
+                        @if (!string.IsNullOrWhiteSpace(sermon.PastorName))
+                        {
+                            <div class="sermon-pastor">
+
+                                <div class="sermon-pastor-icon">
+
+                                    <i class="bi bi-person-fill"></i>
+
+                                </div>
+
+                                <span>
+                                    @sermon.PastorName
+                                </span>
+
+                            </div>
+                        }
+
+
+                        @if (!string.IsNullOrWhiteSpace(sermon.Content))
+                        {
+                            <p class="sermon-description">
+
+                                @GetShortDescription(sermon.Content)
+
+                            </p>
+                        }
+
+
+                        <button type="button"
+                                class="sermon-watch-button"
+                                @onclick="() => OpenSermon(sermon)">
+
+                            <span>
+                                Watch Sermon
+                            </span>
+
+                            <i class="bi bi-arrow-right"></i>
+
+                        </button>
+
+                    </div>
+
+                </article>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- SERMON MODAL -->
+<!-- ========================================================= -->
+
+@if (selectedSermon != null)
+{
+    <div class="sermon-modal-backdrop"
+         @onclick="CloseSermon">
+
+        <div class="sermon-modal"
+             @onclick:stopPropagation="true">
+
+            <!-- HEADER -->
+
+            <div class="sermon-modal-header">
+
+                <div>
+
+                    <div class="sermon-modal-label">
+                        <i class="bi bi-play-circle-fill"></i>
+                        Sermon
+                    </div>
+
+                    <h2>
+                        @selectedSermon.Title
+                    </h2>
+
+                </div>
+
+                <button type="button"
+                        class="sermon-modal-close"
+                        @onclick="CloseSermon"
+                        aria-label="Close">
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- VIDEO -->
+
+            <div class="sermon-video-container">
+
+                @if (!string.IsNullOrWhiteSpace(selectedSermon.VideoUrl))
+                {
+                    <video class="sermon-video"
+                           controls
+                           preload="metadata">
+
+                        <source src="@selectedSermon.VideoUrl"
+                                type="video/mp4" />
+
+                        Your browser does not support video playback.
+                    </video>
+                }
+                else
+                {
+                    <div class="sermon-no-video">
+
+                        <div class="sermon-no-video-icon">
+
+                            <i class="bi bi-camera-video-off"></i>
+
+                        </div>
+
+                        <h3>
+                            Video unavailable
+                        </h3>
+
+                        <p>
+                            The video for this sermon is currently unavailable.
+                        </p>
+
+                    </div>
+                }
+
+            </div>
+
+
+            <!-- DETAILS -->
+
+            <div class="sermon-modal-details">
+
+                <div class="sermon-detail">
+
+                    <i class="bi bi-calendar3"></i>
+
+                    <div>
+
+                        <span>Date</span>
+
+                        <strong>
+                            @selectedSermon.Date.ToString("dd MMMM yyyy")
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                @if (!string.IsNullOrWhiteSpace(selectedSermon.PastorName))
+                {
+                    <div class="sermon-detail">
+
+                        <i class="bi bi-person"></i>
+
+                        <div>
+
+                            <span>Pastor</span>
+
+                            <strong>
+                                @selectedSermon.PastorName
+                            </strong>
+
+                        </div>
+
+                    </div>
+                }
+
+
+                @if (!string.IsNullOrWhiteSpace(selectedSermon.Duration))
+                {
+                    <div class="sermon-detail">
+
+                        <i class="bi bi-clock"></i>
+
+                        <div>
+
+                            <span>Duration</span>
+
+                            <strong>
+                                @selectedSermon.Duration
+                            </strong>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+
+            <!-- CONTENT -->
+
+            @if (!string.IsNullOrWhiteSpace(selectedSermon.Content))
+            {
+                <div class="sermon-modal-message">
+
+                    <h3>
+                        About this sermon
+                    </h3>
+
+                    <p>
+                        @selectedSermon.Content
+                    </p>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
 
 @code {
 
+    private List<global::pacc_system_test_one.Models.Sermon>
+        sermons = new();
+
+    private global::pacc_system_test_one.Models.Sermon?
+        selectedSermon;
+
+    private bool isLoading = true;
+
+    private bool hasError;
+
+    private string errorMessage = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSermonsAsync();
+    }
+
+
+    private async Task LoadSermonsAsync()
+    {
+        isLoading = true;
+        hasError = false;
+        errorMessage = "";
+
+        try
+        {
+            var currentUser = AuthService.CurrentUser;
+
+            if (currentUser == null)
+            {
+                currentUser =
+                    await AuthService.LoadCurrentUserAsync();
+            }
+
+            if (currentUser == null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+
+            var results =
+                await AuthService.GetSermonsAsync();
+
+
+            sermons = results
+                .Where(x =>
+                    x != null &&
+                    !string.IsNullOrWhiteSpace(x.Title))
+                .OrderByDescending(x => x.Date)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Sermon loading error: {ex}"
+            );
+
+            sermons.Clear();
+
+            hasError = true;
+
+            errorMessage =
+                "The sermons could not be loaded. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private void OpenSermon(
+        global::pacc_system_test_one.Models.Sermon sermon)
+    {
+        selectedSermon = sermon;
+    }
+
+
+    private void CloseSermon()
+    {
+        selectedSermon = null;
+    }
+
+
+    private string GetShortDescription(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "";
+
+        const int maxLength = 150;
+
+        if (content.Length <= maxLength)
+            return content;
+
+        return content.Substring(0, maxLength).TrimEnd() + "...";
+    }
 }

@@ -1,3 +1,5 @@
 <Solution>
-  <Project Path="pacc-system-test-one/pacc-system-test-one.csproj" />
+  <Project Path="pacc-system-test-one/pacc-system-test-one.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
 </Solution>

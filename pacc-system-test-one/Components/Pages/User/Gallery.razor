@@ -1,5 +1,302 @@
-﻿<h3>Gallery</h3>
+﻿@page "/user/gallery"
+
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Gallery</PageTitle>
+
+<div class="user-gallery-page">
+
+    <!-- ==========================================
+         PAGE HEADER
+         ========================================== -->
+
+    <div class="gallery-page-header">
+
+        <div>
+
+            <div class="gallery-breadcrumb">
+                Christian Centre
+                <span>/</span>
+                Gallery
+            </div>
+
+            <div class="gallery-title-row">
+
+                <div class="gallery-title-icon">
+                    <i class="bi bi-images"></i>
+                </div>
+
+                <div>
+
+                    <h1>
+                        Gallery
+                    </h1>
+
+                    <p>
+                        Explore moments and memories from Christian Centre.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        @if (!isLoading && galleryImages.Any())
+        {
+            <div class="gallery-count">
+
+                <i class="bi bi-image"></i>
+
+                <span>
+                    @galleryImages.Count
+                    @(galleryImages.Count == 1 ? "Image" : "Images")
+                </span>
+
+            </div>
+        }
+
+    </div>
+
+
+    <!-- ==========================================
+         LOADING
+         ========================================== -->
+
+    @if (isLoading)
+    {
+        <div class="gallery-loading">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+
+            </div>
+
+            <div class="gallery-loading-title">
+                Loading gallery...
+            </div>
+
+            <div class="gallery-loading-text">
+                Please wait while we retrieve the images.
+            </div>
+
+        </div>
+    }
+
+
+
+
+
+    <!-- ==========================================
+         EMPTY
+         ========================================== -->
+
+    @if (!galleryImages.Any())
+    {
+        <div class="gallery-empty">
+
+            <div class="gallery-empty-icon">
+                <i class="bi bi-images"></i>
+            </div>
+
+            <h2>
+                No images yet
+            </h2>
+
+            <p>
+                There are currently no images available in the church gallery.
+            </p>
+
+        </div>
+    }
+
+
+    <!-- ==========================================
+         GALLERY
+         ========================================== -->
+
+    @if (galleryImages.Any())
+    {
+        <div class="gallery-grid">
+
+            @foreach (var image in galleryImages)
+            {
+                <button type="button"
+                        class="gallery-card"
+                        @onclick="() => OpenImage(image)">
+
+                    <div class="gallery-image-wrapper">
+
+                        <img src="@image.ImageUrl"
+                             alt="@image.Title"
+                             class="gallery-image"
+                             loading="lazy" />
+
+                        <div class="gallery-image-overlay">
+
+                            <div class="gallery-view-icon">
+
+                                <i class="bi bi-zoom-in"></i>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(image.Title))
+                    {
+                        <div class="gallery-card-footer">
+
+                            <span>
+                                @image.Title
+                            </span>
+
+                        </div>
+                    }
+
+                </button>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+<!-- ==========================================
+     IMAGE LIGHTBOX
+     ========================================== -->
+
+@if (selectedImage != null)
+{
+    <div class="gallery-lightbox"
+         @onclick="CloseImage">
+
+        <div class="gallery-lightbox-content"
+             @onclick:stopPropagation="true">
+
+            <!-- Close button -->
+
+            <button type="button"
+                    class="gallery-lightbox-close"
+                    aria-label="Close image"
+                    @onclick="CloseImage">
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+
+            <!-- Image -->
+
+            <div class="gallery-lightbox-image-container">
+
+                <img src="@selectedImage.ImageUrl"
+                     alt="@selectedImage.Title"
+                     class="gallery-lightbox-image" />
+
+            </div>
+
+
+            <!-- Image information -->
+
+            @if (!string.IsNullOrWhiteSpace(selectedImage.Title))
+            {
+                <div class="gallery-lightbox-caption">
+
+                    <i class="bi bi-image"></i>
+
+                    <span>
+                        @selectedImage.Title
+                    </span>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+}
+
 
 @code {
+    
+    private List<global::pacc_system_test_one.Models.Gallery> galleryImages = new();
 
+    private global::pacc_system_test_one.Models.Gallery? selectedImage;
+
+    private bool isLoading = true;
+
+    private string errorMessage = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGalleryAsync();
+    }
+
+
+    private async Task LoadGalleryAsync()
+    {
+        isLoading = true;
+
+        errorMessage = string.Empty;
+
+        try
+        {
+            var user = AuthService.CurrentUser;
+
+            if (user == null)
+            {
+                user = await AuthService.LoadCurrentUserAsync();
+            }
+
+            if (user == null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+
+            var images = await AuthService.GetGalleryAsync();
+
+            galleryImages = images
+                .Where(x =>
+                    !string.IsNullOrWhiteSpace(x.ImageUrl))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Gallery loading error: {ex.Message}"
+            );
+
+            errorMessage =
+                "We couldn't retrieve the gallery images. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private void OpenImage(global::pacc_system_test_one.Models.Gallery image)
+    {
+        selectedImage = image;
+    }
+
+
+    private void CloseImage()
+    {
+        selectedImage = null;
+    }
 }

@@ -1,26 +1,30 @@
-﻿<div class="sidebar-content">
+﻿<div class="user-navigation">
 
-    <!-- Brand -->
-    <div class="brand-section">
+    <!-- ==========================================
+         BRAND
+         ========================================== -->
+
+    <div class="user-brand">
 
         <a href="/dashboard"
-           class="text-decoration-none brand-link">
+           class="user-brand-link">
 
-            <div class="brand-logo">
+            <div class="user-brand-logo">
 
                 <i class="bi bi-cross"></i>
 
             </div>
 
-            <div>
 
-                <div class="brand-title">
+            <div class="user-brand-content">
+
+                <div class="user-brand-title">
                     CHRISTIAN
                     <br />
                     CENTRE
                 </div>
 
-                <div class="brand-subtitle">
+                <div class="user-brand-subtitle">
                     A PLACE OF HOPE, FAITH & FAMILY
                 </div>
 
@@ -31,112 +35,136 @@
     </div>
 
 
-    <!-- Navigation -->
-    <div class="navigation-section">
+    <!-- ==========================================
+         NAVIGATION
+         ========================================== -->
 
-        <div class="navigation-label">
+    <div class="user-nav-section">
+
+        <div class="user-nav-label">
             MENU
         </div>
 
-        <nav class="nav flex-column">
 
-            <NavLink href="/dashboard"
+        <nav class="user-nav">
+
+            <NavLink href="/user/dashboard"
                      Match="NavLinkMatch.All"
-                     class="nav-item">
+                     class="user-nav-item">
 
                 <i class="bi bi-grid-1x2-fill"></i>
 
-                <span>Dashboard</span>
+                <span>
+                    Dashboard
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/sermons"
-                     class="nav-item">
+            <NavLink href="/user/sermons"
+                     class="user-nav-item">
 
                 <i class="bi bi-play-circle-fill"></i>
 
-                <span>Sermons</span>
+                <span>
+                    Sermons
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/services"
-                     class="nav-item">
+            <NavLink href="/user/services"
+                     class="user-nav-item">
 
                 <i class="bi bi-calendar2-week-fill"></i>
 
-                <span>Services</span>
+                <span>
+                    Services
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/prayer-request"
-                     class="nav-item">
+            <NavLink href="/user/prayer-request"
+                     class="user-nav-item">
 
                 <i class="bi bi-heart-fill"></i>
 
-                <span>Prayer Request</span>
+                <span>
+                    Prayer Request
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/give"
-                     class="nav-item">
+            <NavLink href="/user/give"
+                     class="user-nav-item">
 
                 <i class="bi bi-gift-fill"></i>
 
-                <span>Give</span>
+                <span>
+                    Give
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/announcements"
-                     class="nav-item">
+            <NavLink href="/user/announcements"
+                     class="user-nav-item">
 
                 <i class="bi bi-megaphone-fill"></i>
 
-                <span>Announcements</span>
+                <span>
+                    Announcements
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/gallery"
-                     class="nav-item">
+            <NavLink href="/user/gallery"
+                     class="user-nav-item">
 
                 <i class="bi bi-images"></i>
 
-                <span>Gallery</span>
+                <span>
+                    Gallery
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/outreach"
-                     class="nav-item">
+            <NavLink href="/user/outreach"
+                     class="user-nav-item">
 
                 <i class="bi bi-people-fill"></i>
 
-                <span>Outreach</span>
+                <span>
+                    Outreach
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/messages"
-                     class="nav-item">
+            <NavLink href="/user/messages"
+                     class="user-nav-item">
 
                 <i class="bi bi-chat-left-text-fill"></i>
 
-                <span>Messages</span>
+                <span>
+                    Messages
+                </span>
 
             </NavLink>
 
 
-            <NavLink href="/profile"
-                     class="nav-item">
+            <NavLink href="/user/profile"
+                     class="user-nav-item">
 
                 <i class="bi bi-person-circle"></i>
 
-                <span>Profile</span>
+                <span>
+                    Profile
+                </span>
 
             </NavLink>
 
@@ -145,38 +173,49 @@
     </div>
 
 
-    <!-- Bottom section -->
-    <div class="sidebar-bottom">
+    <!-- ==========================================
+         SIDEBAR BOTTOM
+         ========================================== -->
 
-        <!-- Motto card -->
-        <div class="motto-card">
+    <div class="user-sidebar-bottom">
 
-            <div class="motto-icon">
+        <div class="user-motto">
+
+            <div class="user-motto-icon">
 
                 <i class="bi bi-heart-fill"></i>
 
             </div>
 
-            <div class="motto-text">
+            <div class="user-motto-text">
 
-                <div>Real People.</div>
-                <div>Real Faith.</div>
-                <div>A Greater Purpose.</div>
+                <strong>
+                    Real People.
+                </strong>
+
+                <strong>
+                    Real Faith.
+                </strong>
+
+                <strong>
+                    A Greater Purpose.
+                </strong>
 
             </div>
 
         </div>
 
 
-        <!-- Logout -->
-        <NavLink href="/logout"
-                 class="logout-link">
+        <a href="/logout"
+           class="user-logout">
 
             <i class="bi bi-box-arrow-right"></i>
 
-            <span>Logout</span>
+            <span>
+                Logout
+            </span>
 
-        </NavLink>
+        </a>
 
     </div>
 
