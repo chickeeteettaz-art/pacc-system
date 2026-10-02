@@ -8,73 +8,431 @@
 
 @if (isLoading)
 {
-    <div class="d-flex justify-content-center align-items-center"
-         style="min-height: 400px;">
+    <div class="dashboard-loading">
 
-        <div class="text-center">
-
-            <div class="spinner-border text-primary mb-3"
+        <div class="dashboard-loading-spinner">
+            <div class="spinner-border text-primary"
                  role="status">
             </div>
+        </div>
 
-            <div class="text-muted">
-                Loading your dashboard...
-            </div>
+        <div class="dashboard-loading-title">
+            Loading your dashboard...
+        </div>
 
+        <div class="dashboard-loading-text">
+            Please wait a moment.
         </div>
 
     </div>
 }
 else if (!isAuthenticated)
 {
-    <div class="alert alert-warning">
-        <i class="bi bi-exclamation-circle me-2"></i>
-        Please sign in to continue.
+    <div class="dashboard-auth-message">
+
+        <div class="dashboard-message-icon">
+            <i class="bi bi-exclamation-circle"></i>
+        </div>
+
+        <div>
+            <strong>
+                Sign in required
+            </strong>
+
+            <p>
+                Please sign in to continue to your dashboard.
+            </p>
+        </div>
+
+        <button type="button"
+                class="dashboard-message-button"
+                @onclick="GoToLogin">
+
+            Sign In
+
+            <i class="bi bi-arrow-right"></i>
+
+        </button>
+
     </div>
 }
 else
 {
-    <div class="mb-4">
+    <!-- ==========================================
+         DASHBOARD HEADER
+         ========================================== -->
 
-        <div class="text-muted small">
-            Welcome back
+    <section class="dashboard-welcome">
+
+        <div class="dashboard-welcome-content">
+
+            <div class="dashboard-eyebrow">
+                Welcome back
+            </div>
+
+            <h1>
+                Hello, @displayName
+                <span class="dashboard-wave">👋</span>
+            </h1>
+
+            <p>
+                We're glad to have you with us.
+            </p>
+
         </div>
 
-        <h2 class="fw-bold">
-            Hello, @displayName 👋
-        </h2>
+        <div class="dashboard-welcome-icon">
 
-        <p class="text-muted">
-            We're glad to have you with us.
-        </p>
+            <i class="bi bi-house-heart-fill"></i>
 
-    </div>
+        </div>
 
-    <!-- Your dashboard content -->
+    </section>
+
+
+    <!-- ==========================================
+         QUICK ACTIONS
+         ========================================== -->
+
+    <section class="dashboard-section">
+
+        <div class="dashboard-section-heading">
+
+            <div>
+                <h2>
+                    Quick Actions
+                </h2>
+
+                <p>
+                    Access some of the most important church services.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-action-grid">
+
+            <!-- Prayer -->
+
+            <a href="/prayer-request"
+               class="dashboard-action-card">
+
+                <div class="dashboard-action-icon blue">
+                    <i class="bi bi-heart-fill"></i>
+                </div>
+
+                <div class="dashboard-action-content">
+
+                    <h3>
+                        Prayer Request
+                    </h3>
+
+                    <p>
+                        Share a prayer request with the church.
+                    </p>
+
+                </div>
+
+                <i class="bi bi-arrow-right dashboard-action-arrow"></i>
+
+            </a>
+
+
+            <!-- Give -->
+
+            <a href="/give"
+               class="dashboard-action-card">
+
+                <div class="dashboard-action-icon green">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+
+                <div class="dashboard-action-content">
+
+                    <h3>
+                        Give
+                    </h3>
+
+                    <p>
+                        Support the work and ministry of the church.
+                    </p>
+
+                </div>
+
+                <i class="bi bi-arrow-right dashboard-action-arrow"></i>
+
+            </a>
+
+
+            <!-- Sermons -->
+
+            <a href="/sermons"
+               class="dashboard-action-card">
+
+                <div class="dashboard-action-icon purple">
+                    <i class="bi bi-play-circle-fill"></i>
+                </div>
+
+                <div class="dashboard-action-content">
+
+                    <h3>
+                        Sermons
+                    </h3>
+
+                    <p>
+                        Watch sermons and messages from the church.
+                    </p>
+
+                </div>
+
+                <i class="bi bi-arrow-right dashboard-action-arrow"></i>
+
+            </a>
+
+
+            <!-- Announcements -->
+
+            <a href="/announcements"
+               class="dashboard-action-card">
+
+                <div class="dashboard-action-icon orange">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+
+                <div class="dashboard-action-content">
+
+                    <h3>
+                        Announcements
+                    </h3>
+
+                    <p>
+                        Stay updated with church announcements.
+                    </p>
+
+                </div>
+
+                <i class="bi bi-arrow-right dashboard-action-arrow"></i>
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================================
+         INFORMATION CARDS
+         ========================================== -->
+
+    <section class="dashboard-section">
+
+        <div class="dashboard-section-heading">
+
+            <div>
+
+                <h2>
+                    Explore Christian Centre
+                </h2>
+
+                <p>
+                    Connect, grow and stay involved with our church community.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="dashboard-info-grid">
+
+            <!-- Services -->
+
+            <a href="/services"
+               class="dashboard-info-card">
+
+                <div class="dashboard-info-icon">
+
+                    <i class="bi bi-calendar2-week-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Services
+                    </h3>
+
+                    <p>
+                        View upcoming church services and gatherings.
+                    </p>
+
+                    <span>
+                        View services
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <!-- Gallery -->
+
+            <a href="/gallery"
+               class="dashboard-info-card">
+
+                <div class="dashboard-info-icon">
+
+                    <i class="bi bi-images"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Gallery
+                    </h3>
+
+                    <p>
+                        Explore moments and memories from Christian Centre.
+                    </p>
+
+                    <span>
+                        View gallery
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <!-- Outreach -->
+
+            <a href="/outreach"
+               class="dashboard-info-card">
+
+                <div class="dashboard-info-icon">
+
+                    <i class="bi bi-people-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Outreach
+                    </h3>
+
+                    <p>
+                        Discover our community outreach programmes.
+                    </p>
+
+                    <span>
+                        Explore outreach
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+            </a>
+
+
+            <!-- Messages -->
+
+            <a href="/messages"
+               class="dashboard-info-card">
+
+                <div class="dashboard-info-icon">
+
+                    <i class="bi bi-chat-left-text-fill"></i>
+
+                </div>
+
+                <div>
+
+                    <h3>
+                        Messages
+                    </h3>
+
+                    <p>
+                        Send a message to the Christian Centre team.
+                    </p>
+
+                    <span>
+                        Send message
+                        <i class="bi bi-arrow-right"></i>
+                    </span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+    </section>
+
+
+    <!-- ==========================================
+         BOTTOM MESSAGE
+         ========================================== -->
+
+    <section class="dashboard-faith-card">
+
+        <div class="dashboard-faith-icon">
+
+            <i class="bi bi-heart-fill"></i>
+
+        </div>
+
+        <div class="dashboard-faith-content">
+
+            <h2>
+                A place of hope, faith & family
+            </h2>
+
+            <p>
+                We're here to help you connect with God,
+                grow in faith and become part of our church family.
+            </p>
+
+        </div>
+
+        <div class="dashboard-faith-cross">
+
+            <i class="bi bi-cross"></i>
+
+        </div>
+
+    </section>
 }
+
 
 @code {
 
     private bool isLoading = true;
 
-    private bool isAuthenticated = false;
+    private bool isAuthenticated;
 
     private string displayName = "User";
+
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var user =
-                await AuthService.LoadCurrentUserAsync();
+            var user = AuthService.CurrentUser;
 
             if (user == null)
             {
-                Navigation.NavigateTo(
-                    "/login",
-                    true
-                );
+                user = await AuthService.LoadCurrentUserAsync();
+            }
 
+
+            if (user == null)
+            {
+                isAuthenticated = false;
                 return;
             }
 
@@ -82,8 +440,26 @@ else
             isAuthenticated = true;
 
 
-            displayName =
-                AuthService.GetDisplayName(user.EmailAddress);
+            /*
+             * Use the actual Firebase/Firestore profile name
+             * rather than deriving a name from the email address.
+             */
+
+            if (!string.IsNullOrWhiteSpace(user.FirstName))
+            {
+                displayName = user.FirstName;
+            }
+            else if (!string.IsNullOrWhiteSpace(user.EmailAddress))
+            {
+                displayName =
+                    AuthService.GetDisplayName(
+                        user.EmailAddress
+                    );
+            }
+            else
+            {
+                displayName = "User";
+            }
         }
         catch (Exception ex)
         {
@@ -91,14 +467,20 @@ else
                 $"Dashboard authentication error: {ex.Message}"
             );
 
-            Navigation.NavigateTo(
-                "/login",
-                true
-            );
+            isAuthenticated = false;
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo(
+            "/login",
+            true
+        );
     }
 }
