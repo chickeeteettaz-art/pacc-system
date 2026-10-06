@@ -869,7 +869,23 @@ namespace pacc_system_test_one.Services
                 throw;
             }
         }
+        public async Task<DashboardStats> GetDashboardStatsAsync()
+        {
+            await WaitForFirebaseAsync();
 
+            try
+            {
+                return await _jsRuntime.InvokeAsync<DashboardStats>(
+                    "firebaseAuth.getDashboardStats");
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase dashboard error: {ex.Message}");
+
+                throw;
+            }
+        }
         // =====================================================
         // LOGOUT
         // =====================================================
@@ -905,6 +921,24 @@ namespace pacc_system_test_one.Services
             public string? EmailAddress { get; set; }
 
             public string? UserType { get; set; }
+        }
+        public class DashboardStats
+        {
+            public int Users { get; set; }
+
+            public int Donations { get; set; }
+
+            public int Sermons { get; set; }
+
+            public int Messages { get; set; }
+
+            public int Announcements { get; set; }
+
+            public int Gallery { get; set; }
+
+            public int PrayerRequests { get; set; }
+
+            public int OutreachPrograms { get; set; }
         }
     }
 
