@@ -3,7 +3,6 @@
 @layout AdminLayout
 
 @using pacc_system_test_one.Services
-@using pacc_system_test_one.Models
 
 @inject FirebaseAuthService AuthService
 @inject NavigationManager Navigation
@@ -13,30 +12,72 @@
 
 @if (loading)
 {
-    <div class="d-flex justify-content-center align-items-center"
-         style="min-height: 400px;">
+    <div class="dashboard-loading">
 
-        <div class="text-center">
+        <div class="spinner-border text-primary"
+             role="status">
+        </div>
 
-            <div class="spinner-border text-primary"
-                 role="status">
-            </div>
+        <p>
+            Loading administration dashboard...
+        </p>
 
-            <p class="text-muted mt-3">
-                Loading administration dashboard...
+    </div>
+}
+else if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="dashboard-error">
+
+        <div class="dashboard-error-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+        </div>
+
+        <div class="dashboard-error-content">
+
+            <h5>
+                Unable to load dashboard
+            </h5>
+
+            <p>
+                @errorMessage
             </p>
+
+            <button class="btn btn-primary"
+                    @onclick="LoadDashboardAsync">
+
+                <i class="bi bi-arrow-clockwise me-2"></i>
+
+                Try Again
+
+            </button>
 
         </div>
 
     </div>
 }
-else if (isAdmin)
+else if (!isAdmin)
 {
-    <!-- PAGE HEADER -->
+    <div class="alert alert-danger">
+
+        <i class="bi bi-shield-exclamation me-2"></i>
+
+        You do not have permission to access the administration area.
+
+    </div>
+}
+else
+{
+    <!-- HEADER -->
 
     <div class="page-header m-4">
 
         <div>
+
+            <div class="page-breadcrumb">
+                Administration
+                <span>/</span>
+                Dashboard
+            </div>
 
             <h1 class="page-title">
                 Admin Dashboard
@@ -55,26 +96,24 @@ else if (isAdmin)
 
     <div class="row g-4 m-4">
 
-        <!-- Users -->
+        <!-- USERS -->
 
         <div class="col-md-6 col-xl-3">
 
-            <div class="card dashboard-card h-100">
+            <div class="dashboard-stat-card">
 
-                <div class="card-body">
+                <div class="dashboard-stat-icon users">
+                    <i class="bi bi-people-fill"></i>
+                </div>
 
-                    <div class="dashboard-icon">
+                <div>
 
-                        <i class="bi bi-people"></i>
-
-                    </div>
-
-                    <p class="text-muted mb-1 mt-3">
+                    <span>
                         Total Users
-                    </p>
+                    </span>
 
-                    <h2 class="fw-bold mb-0">
-                        0
+                    <h2>
+                        @stats.Users
                     </h2>
 
                 </div>
@@ -84,26 +123,24 @@ else if (isAdmin)
         </div>
 
 
-        <!-- Donations -->
+        <!-- DONATIONS -->
 
         <div class="col-md-6 col-xl-3">
 
-            <div class="card dashboard-card h-100">
+            <div class="dashboard-stat-card">
 
-                <div class="card-body">
+                <div class="dashboard-stat-icon donations">
+                    <i class="bi bi-wallet2"></i>
+                </div>
 
-                    <div class="dashboard-icon">
+                <div>
 
-                        <i class="bi bi-wallet2"></i>
-
-                    </div>
-
-                    <p class="text-muted mb-1 mt-3">
+                    <span>
                         Donations
-                    </p>
+                    </span>
 
-                    <h2 class="fw-bold mb-0">
-                        0
+                    <h2>
+                        @stats.Donations
                     </h2>
 
                 </div>
@@ -113,26 +150,24 @@ else if (isAdmin)
         </div>
 
 
-        <!-- Sermons -->
+        <!-- SERMONS -->
 
         <div class="col-md-6 col-xl-3">
 
-            <div class="card dashboard-card h-100">
+            <div class="dashboard-stat-card">
 
-                <div class="card-body">
+                <div class="dashboard-stat-icon sermons">
+                    <i class="bi bi-play-circle-fill"></i>
+                </div>
 
-                    <div class="dashboard-icon">
+                <div>
 
-                        <i class="bi bi-play-circle"></i>
-
-                    </div>
-
-                    <p class="text-muted mb-1 mt-3">
+                    <span>
                         Sermons
-                    </p>
+                    </span>
 
-                    <h2 class="fw-bold mb-0">
-                        0
+                    <h2>
+                        @stats.Sermons
                     </h2>
 
                 </div>
@@ -142,27 +177,123 @@ else if (isAdmin)
         </div>
 
 
-        <!-- Messages -->
+        <!-- MESSAGES -->
 
         <div class="col-md-6 col-xl-3">
 
-            <div class="card dashboard-card h-100">
+            <div class="dashboard-stat-card">
 
-                <div class="card-body">
+                <div class="dashboard-stat-icon messages">
+                    <i class="bi bi-chat-dots-fill"></i>
+                </div>
 
-                    <div class="dashboard-icon">
+                <div>
 
-                        <i class="bi bi-chat-dots"></i>
-
-                    </div>
-
-                    <p class="text-muted mb-1 mt-3">
+                    <span>
                         Messages
-                    </p>
+                    </span>
 
-                    <h2 class="fw-bold mb-0">
-                        0
+                    <h2>
+                        @stats.Messages
                     </h2>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SECOND ROW -->
+
+    <div class="row g-4 m-4">
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="dashboard-mini-card">
+
+                <i class="bi bi-megaphone-fill"></i>
+
+                <div>
+
+                    <span>
+                        Announcements
+                    </span>
+
+                    <strong>
+                        @stats.Announcements
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="dashboard-mini-card">
+
+                <i class="bi bi-images"></i>
+
+                <div>
+
+                    <span>
+                        Gallery Images
+                    </span>
+
+                    <strong>
+                        @stats.Gallery
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="dashboard-mini-card">
+
+                <i class="bi bi-heart-fill"></i>
+
+                <div>
+
+                    <span>
+                        Prayer Requests
+                    </span>
+
+                    <strong>
+                        @stats.PrayerRequests
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-md-6 col-xl-3">
+
+            <div class="dashboard-mini-card">
+
+                <i class="bi bi-people-fill"></i>
+
+                <div>
+
+                    <span>
+                        Outreach Programs
+                    </span>
+
+                    <strong>
+                        @stats.OutreachPrograms
+                    </strong>
 
                 </div>
 
@@ -175,99 +306,157 @@ else if (isAdmin)
 
     <!-- QUICK ACTIONS -->
 
-    <div class="card m-4">
+    <div class="dashboard-section-card m-4">
 
-        <div class="card-body">
+        <div class="dashboard-section-header">
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
 
-                <div>
+                <h4>
+                    Administration
+                </h4>
 
-                    <h5 class="fw-bold mb-1">
-                        Administration
-                    </h5>
+                <p>
+                    Quickly access the different management areas.
+                </p>
 
-                    <p class="text-muted mb-0">
-                        Quickly access management areas.
-                    </p>
+            </div>
 
-                </div>
+            <i class="bi bi-speedometer2"></i>
 
-                <i class="bi bi-speedometer2 fs-3 text-primary"></i>
+        </div>
+
+
+        <div class="row g-3">
+
+            <div class="col-md-6 col-lg-3">
+
+                <a href="/admin/users"
+                   class="dashboard-action">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <span>
+                        Manage Users
+                    </span>
+
+                </a>
 
             </div>
 
 
-            <div class="row g-3">
+            <div class="col-md-6 col-lg-3">
 
-                <div class="col-md-6 col-lg-3">
+                <a href="/admin/announcements"
+                   class="dashboard-action">
 
-                    <a href="/admin/users"
-                       class="btn btn-light w-100 py-3">
+                    <i class="bi bi-megaphone-fill"></i>
 
-                        <i class="bi bi-people me-2"></i>
-
-                        Manage Users
-
-                    </a>
-
-                </div>
-
-
-                <div class="col-md-6 col-lg-3">
-
-                    <a href="/admin/announcements"
-                       class="btn btn-light w-100 py-3">
-
-                        <i class="bi bi-megaphone me-2"></i>
-
+                    <span>
                         Announcements
+                    </span>
 
-                    </a>
+                </a>
 
-                </div>
+            </div>
 
 
-                <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-3">
 
-                    <a href="/admin/sermons"
-                       class="btn btn-light w-100 py-3">
+                <a href="/admin/sermons"
+                   class="dashboard-action">
 
-                        <i class="bi bi-play-circle me-2"></i>
+                    <i class="bi bi-play-circle-fill"></i>
 
+                    <span>
                         Manage Sermons
+                    </span>
 
-                    </a>
+                </a>
 
-                </div>
+            </div>
 
 
-                <div class="col-md-6 col-lg-3">
+            <div class="col-md-6 col-lg-3">
 
-                    <a href="/admin/gallery"
-                       class="btn btn-light w-100 py-3">
+                <a href="/admin/gallery"
+                   class="dashboard-action">
 
-                        <i class="bi bi-images me-2"></i>
+                    <i class="bi bi-images"></i>
 
+                    <span>
                         Manage Gallery
+                    </span>
 
-                    </a>
+                </a>
 
-                </div>
+            </div>
+
+
+            <div class="col-md-6 col-lg-3">
+
+                <a href="/admin/messages"
+                   class="dashboard-action">
+
+                    <i class="bi bi-chat-dots-fill"></i>
+
+                    <span>
+                        Messages
+                    </span>
+
+                </a>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-3">
+
+                <a href="/admin/prayer-requests"
+                   class="dashboard-action">
+
+                    <i class="bi bi-heart-fill"></i>
+
+                    <span>
+                        Prayer Requests
+                    </span>
+
+                </a>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-3">
+
+                <a href="/admin/outreach"
+                   class="dashboard-action">
+
+                    <i class="bi bi-people-fill"></i>
+
+                    <span>
+                        Outreach
+                    </span>
+
+                </a>
+
+            </div>
+
+
+            <div class="col-md-6 col-lg-3">
+
+                <a href="/admin/donations"
+                   class="dashboard-action">
+
+                    <i class="bi bi-wallet2"></i>
+
+                    <span>
+                        Donations
+                    </span>
+
+                </a>
 
             </div>
 
         </div>
-
-    </div>
-}
-else
-{
-    <div class="alert alert-danger">
-
-        <i class="bi bi-shield-exclamation me-2"></i>
-
-        You do not have permission to access the administration area.
 
     </div>
 }
@@ -276,27 +465,71 @@ else
 @code {
 
     private bool loading = true;
-    private bool isAdmin = false;
+
+    private bool isAdmin;
+
+    private string errorMessage = "";
+
+    private FirebaseAuthService.DashboardStats stats =
+        new FirebaseAuthService.DashboardStats();
+
 
     protected override async Task OnInitializedAsync()
     {
-        var user = await AuthService.LoadCurrentUserAsync();
+        await LoadDashboardAsync();
+    }
 
-        if (user == null)
+
+    private async Task LoadDashboardAsync()
+    {
+        loading = true;
+
+        errorMessage = "";
+
+        try
         {
-            Navigation.NavigateTo("/login", true);
-            return;
+            var user =
+                await AuthService.LoadCurrentUserAsync();
+
+            if (user == null)
+            {
+                Navigation.NavigateTo(
+                    "/login",
+                    true);
+
+                return;
+            }
+
+
+            isAdmin =
+                user.UserType.Equals(
+                    "Admin",
+                    StringComparison.OrdinalIgnoreCase);
+
+
+            if (!isAdmin)
+            {
+                Navigation.NavigateTo(
+                    "/user/dashboard",
+                    true);
+
+                return;
+            }
+
+
+            stats =
+                await AuthService.GetDashboardStatsAsync();
         }
-
-        isAdmin = user.UserType.Equals(
-            "Admin",
-            StringComparison.OrdinalIgnoreCase);
-
-        loading = false;
-
-        if (!isAdmin)
+        catch (Exception ex)
         {
-            Navigation.NavigateTo("/user/dashboard", true);
+            Console.WriteLine(
+                $"ADMIN DASHBOARD ERROR: {ex}");
+
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            loading = false;
         }
     }
 }
