@@ -794,6 +794,7 @@ window.firebaseAuth.deleteAnnouncement = async function (
 
 // Get all donations
 window.firebaseAuth.getDonations = async function () {
+
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
@@ -805,54 +806,111 @@ window.firebaseAuth.getDonations = async function () {
     const donations = [];
 
     snapshot.forEach((documentSnapshot) => {
+
         const data = documentSnapshot.data();
+
+        let dateValue = null;
+
+        /*
+         * Firestore Timestamp
+         */
+        if (
+            data.date &&
+            typeof data.date.toDate === "function"
+        ) {
+            dateValue = data.date.toDate().toISOString();
+        }
+
+        /*
+         * JavaScript Date
+         */
+        else if (data.date instanceof Date) {
+            dateValue = data.date.toISOString();
+        }
+
+        /*
+         * Existing ISO/string date
+         */
+        else if (
+            typeof data.date === "string" &&
+            data.date.trim() !== ""
+        ) {
+            dateValue = data.date;
+        }
+
+        /*
+         * Fallback
+         */
+        else {
+            dateValue = new Date().toISOString();
+        }
 
         donations.push({
             donationId: documentSnapshot.id,
             userId: data.userId || "",
             amount: Number(data.amount || 0),
-            date: data.date || new Date().toISOString(),
+            date: dateValue,
             donorName: data.donorName || "",
             givingType: data.givingType || "General",
             paymentMethod: data.paymentMethod || "Cash"
         });
     });
 
-    donations.sort(
-        (a, b) => new Date(b.date) - new Date(a.date)
-    );
-
     return donations;
 };
 
 
 // Create a donation record
-window.firebaseAuth.createDonation = async function (
-    userId,
-    amount,
-    date,
-    donorName,
-    givingType,
-    paymentMethod
-) {
+window.firebaseAuth.createDonation = async function (donation) {
+
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
 
-    if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) {
+    if (!donation) {
+        throw new Error("Donation data is required.");
+    }
+
+    const amount = Number(donation.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("Donation amount must be greater than zero.");
     }
 
-    await addDoc(collection(db, "donations"), {
-        userId: userId || "",
-        amount: Number(amount),
-        date: new Date(date).toISOString(),
-        donorName: donorName || "",
-        givingType: givingType || "General",
-        paymentMethod: paymentMethod || "Cash"
-    });
+    let donationDate;
 
-    return true;
+    if (donation.date) {
+        donationDate = Timestamp.fromDate(
+            new Date(donation.date)
+        );
+    }
+    else {
+        donationDate = Timestamp.now();
+    }
+
+    const donationData = {
+        userId: donation.userId || auth.currentUser.uid,
+
+        amount: amount,
+
+        date: donationDate,
+
+        donorName: donation.donorName || "",
+
+        givingType: donation.givingType || "General",
+
+        paymentMethod: donation.paymentMethod || "Cash"
+    };
+
+    const documentReference = await addDoc(
+        collection(db, "donations"),
+        donationData
+    );
+
+    return {
+        success: true,
+        donationId: documentReference.id
+    };
 };
 
 

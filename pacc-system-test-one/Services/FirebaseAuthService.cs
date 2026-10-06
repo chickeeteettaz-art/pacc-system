@@ -405,18 +405,36 @@ namespace pacc_system_test_one.Services
             return donations ?? new List<Donation>();
         }
 
-        public async Task CreateDonationAsync(Donation donation)
+        public async Task<string> CreateDonationAsync(Donation donation)
         {
             await WaitForFirebaseAsync();
 
-            await _jsRuntime.InvokeVoidAsync(
-                "firebaseAuth.createDonation",
-                donation.UserId,
-                donation.Amount,
-                donation.Date,
-                donation.DonorName,
-                donation.GivingType,
-                donation.PaymentMethod);
+            if (CurrentUser == null)
+            {
+                throw new Exception("You must be logged in to make a donation.");
+            }
+
+            try
+            {
+                var result = await _jsRuntime.InvokeAsync<DonationResult>(
+                    "firebaseAuth.createDonation",
+                    donation);
+
+                if (result == null || !result.Success)
+                {
+                    throw new Exception(
+                        result?.Message ?? "Unable to create donation.");
+                }
+
+                return result.DonationId ?? "";
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"Firebase donation error: {ex.Message}");
+
+                throw;
+            }
         }
 
         public async Task UpdateDonationAsync(Donation donation)
@@ -939,6 +957,14 @@ namespace pacc_system_test_one.Services
             public int PrayerRequests { get; set; }
 
             public int OutreachPrograms { get; set; }
+        }
+        public class DonationResult
+        {
+            public bool Success { get; set; }
+
+            public string? DonationId { get; set; }
+
+            public string? Message { get; set; }
         }
     }
 

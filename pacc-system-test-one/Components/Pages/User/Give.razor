@@ -1,5 +1,741 @@
-﻿<h3>Give</h3>
+﻿@page "/user/give"
+
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Give</PageTitle>
+
+<div class="give-page">
+
+    <!-- PAGE HEADER -->
+
+    <div class="give-header">
+
+        <div class="give-breadcrumb">
+            Christian Centre
+            <span>/</span>
+            Give
+        </div>
+
+        <div class="give-header-content">
+
+            <div class="give-header-icon">
+                <i class="bi bi-heart-fill"></i>
+            </div>
+
+            <div>
+
+                <h1>
+                    Give
+                </h1>
+
+                <p>
+                    Your generosity helps us continue our mission
+                    and serve our community.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    @if (isLoading)
+    {
+        <div class="give-loading">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+            </div>
+
+            <p>
+                Loading your giving information...
+            </p>
+
+        </div>
+    }
+    else if (!isAuthenticated)
+    {
+        <div class="give-alert give-alert-warning">
+
+            <div class="give-alert-icon">
+                <i class="bi bi-exclamation-circle-fill"></i>
+            </div>
+
+            <div>
+
+                <strong>
+                    Please sign in
+                </strong>
+
+                <p>
+                    You need to be signed in before you can
+                    submit a donation.
+                </p>
+
+                <button class="btn btn-primary"
+                        @onclick="GoToLogin">
+
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+
+                    Sign In
+
+                </button>
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+
+            <!-- LEFT INFORMATION -->
+
+            <div class="col-lg-5">
+
+                <div class="giving-info-card">
+
+                    <div class="giving-info-icon">
+                        <i class="bi bi-heart-fill"></i>
+                    </div>
+
+                    <h2>
+                        Give with purpose
+                    </h2>
+
+                    <p>
+                        Every contribution helps Christian Centre
+                        continue its ministry, outreach programmes,
+                        services and support for the community.
+                    </p>
+
+
+                    <div class="giving-benefits">
+
+                        <div class="giving-benefit">
+
+                            <div class="giving-benefit-icon">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <div>
+                                <strong>
+                                    Support the ministry
+                                </strong>
+
+                                <span>
+                                    Help us continue serving our
+                                    church community.
+                                </span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="giving-benefit">
+
+                            <div class="giving-benefit-icon">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <div>
+                                <strong>
+                                    Support outreach
+                                </strong>
+
+                                <span>
+                                    Help fund programmes that
+                                    reach people in need.
+                                </span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="giving-benefit">
+
+                            <div class="giving-benefit-icon">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <div>
+                                <strong>
+                                    Make a difference
+                                </strong>
+
+                                <span>
+                                    Every contribution makes
+                                    an impact.
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="giving-scripture">
+
+                        <i class="bi bi-quote"></i>
+
+                        <p>
+                            "Each of you should give what you have
+                            decided in your heart to give."
+                        </p>
+
+                        <span>
+                            2 Corinthians 9:7
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- DONATION FORM -->
+
+            <div class="col-lg-7">
+
+                <div class="donation-card">
+
+                    <div class="donation-card-header">
+
+                        <div>
+
+                            <h2>
+                                Make a Donation
+                            </h2>
+
+                            <p>
+                                Complete the form below to record
+                                your contribution.
+                            </p>
+
+                        </div>
+
+                        <div class="donation-card-icon">
+                            <i class="bi bi-gift-fill"></i>
+                        </div>
+
+                    </div>
+
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="give-alert give-alert-danger">
+
+                            <div class="give-alert-icon">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    Unable to submit donation
+                                </strong>
+
+                                <p>
+                                    @errorMessage
+                                </p>
+
+                            </div>
+
+                            <button type="button"
+                                    class="give-alert-close"
+                                    @onclick="ClearError">
+
+                                <i class="bi bi-x-lg"></i>
+
+                            </button>
+
+                        </div>
+                    }
+
+
+                    @if (donationSubmitted)
+                    {
+                        <div class="donation-success">
+
+                            <div class="donation-success-icon">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+
+                            <h3>
+                                Thank You!
+                            </h3>
+
+                            <p>
+                                Your donation has been recorded
+                                successfully.
+                            </p>
+
+                            <div class="donation-success-amount">
+                                R @submittedAmount.ToString("N2")
+                            </div>
+
+                            <button class="btn btn-primary"
+                                    @onclick="StartNewDonation">
+
+                                <i class="bi bi-plus-lg me-2"></i>
+
+                                Make Another Donation
+
+                            </button>
+
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@donation"
+                                  OnValidSubmit="@SubmitDonationAsync">
+
+                            <DataAnnotationsValidator />
+
+                            <!-- AMOUNT -->
+
+                            <div class="donation-form-section">
+
+                                <label class="donation-label">
+                                    Donation Amount
+                                </label>
+
+                                <div class="amount-input-wrapper">
+
+                                    <span class="amount-prefix">
+                                        R
+                                    </span>
+
+                                    <InputNumber @bind-Value="donation.Amount"
+                                                 class="form-control amount-input"
+                                                 min="1"
+                                                 step="0.01"
+                                                 placeholder="0.00" />
+
+                                </div>
+
+                                <ValidationMessage For="@(() => donation.Amount)"
+                                                   class="text-danger small" />
+
+                            </div>
+
+
+                            <!-- GIVING TYPE -->
+
+                            <div class="donation-form-section">
+
+                                <label class="donation-label">
+                                    Giving Type
+                                </label>
+
+                                <InputSelect @bind-Value="donation.GivingType"
+                                             class="form-select">
+
+                                    <option value="General">
+                                        General Offering
+                                    </option>
+
+                                    <option value="Tithe">
+                                        Tithe
+                                    </option>
+
+                                    <option value="Offering">
+                                        Offering
+                                    </option>
+
+                                    <option value="Missions">
+                                        Missions
+                                    </option>
+
+                                    <option value="Outreach">
+                                        Outreach
+                                    </option>
+
+                                    <option value="Building Fund">
+                                        Building Fund
+                                    </option>
+
+                                    <option value="Other">
+                                        Other
+                                    </option>
+
+                                </InputSelect>
+
+                            </div>
+
+
+                            <!-- PAYMENT METHOD -->
+
+                            <div class="donation-form-section">
+
+                                <label class="donation-label">
+                                    Payment Method
+                                </label>
+
+                                <InputSelect @bind-Value="donation.PaymentMethod"
+                                             class="form-select">
+
+                                    <option value="Cash">
+                                        Cash
+                                    </option>
+
+                                    <option value="EFT">
+                                        EFT / Bank Transfer
+                                    </option>
+
+                                    <option value="Card">
+                                        Card
+                                    </option>
+
+                                </InputSelect>
+
+                                <div class="form-help">
+
+                                    <i class="bi bi-info-circle"></i>
+
+                                    <span>
+                                        Selecting a payment method
+                                        records how the contribution
+                                        was made. Online payment
+                                        processing can be connected
+                                        separately.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- DATE -->
+
+                            <div class="donation-form-section">
+
+                                <label class="donation-label">
+                                    Donation Date
+                                </label>
+
+                                <InputDate @bind-Value="donation.Date"
+                                           class="form-control" />
+
+                                <div class="form-help">
+
+                                    <i class="bi bi-calendar3"></i>
+
+                                    <span>
+                                        The date on which the
+                                        contribution was made.
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- DONOR -->
+
+                            <div class="donor-information">
+
+                                <div class="donor-information-header">
+
+                                    <i class="bi bi-person-circle"></i>
+
+                                    <div>
+
+                                        <strong>
+                                            Donor Information
+                                        </strong>
+
+                                        <span>
+                                            Your account information
+                                            will be attached automatically.
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="donor-details">
+
+                                    <div>
+
+                                        <span>
+                                            Name
+                                        </span>
+
+                                        <strong>
+                                            @donation.DonorName
+                                        </strong>
+
+                                    </div>
+
+                                    <div>
+
+                                        <span>
+                                            Account
+                                        </span>
+
+                                        <strong>
+                                            @userEmail
+                                        </strong>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+
+                            <!-- SUBMIT -->
+
+                            <button type="submit"
+                                    class="btn donation-submit-button"
+                                    disabled="@isSubmitting">
+
+                                @if (isSubmitting)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"
+                                          role="status">
+                                    </span>
+
+                                    <span>
+                                        Saving Donation...
+                                    </span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-heart-fill me-2"></i>
+
+                                    <span>
+                                        Submit Donation
+                                    </span>
+                                }
+
+                            </button>
+
+                        </EditForm>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
 
 @code {
 
+    private Donation donation = new();
+
+    private bool isLoading = true;
+
+    private bool isSubmitting;
+
+    private bool isAuthenticated;
+
+    private bool donationSubmitted;
+
+    private decimal submittedAmount;
+
+    private string userEmail = "";
+
+    private string errorMessage = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserAsync();
+    }
+
+
+    private async Task LoadUserAsync()
+    {
+        isLoading = true;
+
+        try
+        {
+            var user =
+                await AuthService.LoadCurrentUserAsync();
+
+            if (user == null)
+            {
+                isAuthenticated = false;
+                return;
+            }
+
+            isAuthenticated = true;
+
+            userEmail = user.EmailAddress;
+
+            var donorName =
+                $"{user.FirstName} {user.LastName}".Trim();
+
+            if (string.IsNullOrWhiteSpace(donorName))
+            {
+                donorName =
+                    AuthService.GetDisplayName(
+                        user.EmailAddress);
+            }
+
+            donation = new Donation
+            {
+                DonationId = Guid.NewGuid().ToString("N"),
+                UserId = user.Uid,
+                Amount = 0,
+                Date = DateTime.Now,
+                DonorName = donorName,
+                GivingType = "General",
+                PaymentMethod = "Cash"
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Give page authentication error: {ex}");
+
+            errorMessage =
+                "We could not load your account information.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private async Task SubmitDonationAsync()
+    {
+        errorMessage = "";
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo(
+                "/login",
+                true);
+
+            return;
+        }
+
+        if (donation.Amount <= 0)
+        {
+            errorMessage =
+                "Please enter a donation amount greater than zero.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(donation.GivingType))
+        {
+            errorMessage =
+                "Please select a giving type.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(donation.PaymentMethod))
+        {
+            errorMessage =
+                "Please select a payment method.";
+
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            // Generate a new ID for every submission.
+            donation.DonationId =
+                Guid.NewGuid().ToString("N");
+
+            // Always obtain the Firebase UID again from the
+            // authenticated user rather than trusting form data.
+            var currentUser =
+                await AuthService.LoadCurrentUserAsync();
+
+            if (currentUser == null)
+            {
+                Navigation.NavigateTo(
+                    "/login",
+                    true);
+
+                return;
+            }
+
+            donation.UserId =
+                currentUser.Uid;
+
+            await AuthService.CreateDonationAsync(
+                donation);
+
+            submittedAmount =
+                donation.Amount;
+
+            donationSubmitted = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"Donation submission error: {ex}");
+
+            errorMessage =
+                ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+
+    private void StartNewDonation()
+    {
+        donationSubmitted = false;
+
+        errorMessage = "";
+
+        donation = new Donation
+        {
+            DonationId =
+                Guid.NewGuid().ToString("N"),
+
+            UserId =
+                donation.UserId,
+
+            Amount = 0,
+
+            Date =
+                DateTime.Now,
+
+            DonorName =
+                donation.DonorName,
+
+            GivingType =
+                "General",
+
+            PaymentMethod =
+                "Cash"
+        };
+    }
+
+
+    private void ClearError()
+    {
+        errorMessage = "";
+    }
+
+
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo(
+            "/login");
+    }
 }
