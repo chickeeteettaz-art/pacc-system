@@ -544,65 +544,106 @@ namespace pacc_system_test_one.Services
             }
         }
 
-        public async Task<List<Message>> GetMessagesAsync()
+        // ============================================================
+        // MOBILE MESSAGES: GET ALL
+        // ============================================================
+
+        public async Task<List<MobileMessage>> GetMessagesAsync()
         {
             await WaitForFirebaseAsync();
 
             try
             {
-                var result =
-                    await _jsRuntime.InvokeAsync<List<Message>>(
+                var messages =
+                    await _jsRuntime.InvokeAsync<List<MobileMessage>>(
                         "firebaseAuth.getMessages");
 
-                return result ?? new List<Message>();
+                return messages ?? new List<MobileMessage>();
             }
             catch (JSException ex)
             {
-                Console.WriteLine(
-                    $"Firebase getMessages error: {ex.Message}");
-
+                Console.WriteLine($"GetMessagesAsync failed: {ex.Message}");
                 throw;
             }
         }
-
-
-        public async Task MarkMessageAsReadAsync(
-            int messageId)
+        public async Task SendMessageAsync(MobileMessage message)
         {
             await WaitForFirebaseAsync();
+
+            if (CurrentUser == null)
+            {
+                var user = await LoadCurrentUserAsync();
+
+                if (user == null)
+                    throw new InvalidOperationException(
+                        "You must be signed in to send a message.");
+            }
 
             try
             {
                 await _jsRuntime.InvokeVoidAsync(
-                    "firebaseAuth.markMessageAsRead",
-                    messageId);
+                    "firebaseAuth.sendMessage",
+                    message);
             }
             catch (JSException ex)
             {
-                Console.WriteLine(
-                    $"Firebase markMessageAsRead error: {ex.Message}");
-
+                Console.WriteLine($"SendMessageAsync failed: {ex.Message}");
                 throw;
             }
         }
 
 
-        public async Task DeleteMessageAsync(
-            int messageId)
+        // ============================================================
+        // MOBILE MESSAGES: MARK READ / UNREAD
+        // ============================================================
+
+        public async Task UpdateMessageReadStatusAsync(
+            string documentId,
+            bool isRead)
         {
             await WaitForFirebaseAsync();
+
+            if (string.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentException(
+                    "Message document ID is required.", nameof(documentId));
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateMessageReadStatus",
+                    documentId,
+                    isRead);
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine(
+                    $"UpdateMessageReadStatusAsync failed: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        // ============================================================
+        // MOBILE MESSAGES: DELETE
+        // ============================================================
+
+        public async Task DeleteMessageAsync(string documentId)
+        {
+            await WaitForFirebaseAsync();
+
+            if (string.IsNullOrWhiteSpace(documentId))
+                throw new ArgumentException(
+                    "Message document ID is required.", nameof(documentId));
 
             try
             {
                 await _jsRuntime.InvokeVoidAsync(
                     "firebaseAuth.deleteMessage",
-                    messageId);
+                    documentId);
             }
             catch (JSException ex)
             {
-                Console.WriteLine(
-                    $"Firebase deleteMessage error: {ex.Message}");
-
+                Console.WriteLine($"DeleteMessageAsync failed: {ex.Message}");
                 throw;
             }
         }

@@ -9162,3 +9162,366 @@ textarea.form-control {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================
+   USER MESSAGES PAGE
+   ========================================= */
+
+.contact-messages-page {
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    color: #24364b;
+}
+
+.messages-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    color: #8190a5;
+    font-size: 0.9rem;
+}
+
+    .messages-breadcrumb i {
+        font-size: 0.7rem;
+        color: #b4c0ce;
+    }
+
+.messages-heading {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 30px;
+}
+
+.messages-heading-icon {
+    width: 62px;
+    height: 62px;
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 17px;
+    background: #edf4ff;
+    color: #2563eb;
+    font-size: 1.55rem;
+}
+
+.messages-heading h1 {
+    margin: 0 0 6px;
+    color: #172b4d;
+    font-size: clamp(1.7rem, 3vw, 2.15rem);
+    font-weight: 750;
+}
+
+.messages-heading p {
+    margin: 0;
+    color: #75859a;
+    line-height: 1.6;
+}
+
+
+/* Information panel */
+
+.contact-info-card {
+    height: 100%;
+    padding: 32px 28px;
+    border: 1px solid #e5ebf2;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(23, 43, 77, 0.045);
+}
+
+.contact-info-icon {
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    border-radius: 15px;
+    background: #edf4ff;
+    color: #2563eb;
+    font-size: 1.35rem;
+}
+
+.contact-info-card h2 {
+    margin-bottom: 12px;
+    color: #172b4d;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.contact-info-card > p {
+    margin-bottom: 26px;
+    color: #75859a;
+    font-size: 0.94rem;
+    line-height: 1.8;
+}
+
+.contact-benefit {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 17px 0;
+    border-top: 1px solid #edf1f5;
+}
+
+    .contact-benefit > i {
+        margin-top: 2px;
+        color: #2563eb;
+        font-size: 1.15rem;
+    }
+
+    .contact-benefit strong,
+    .contact-benefit span {
+        display: block;
+    }
+
+    .contact-benefit strong {
+        margin-bottom: 5px;
+        color: #30445e;
+        font-size: 0.94rem;
+    }
+
+    .contact-benefit span {
+        color: #7b899b;
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+
+.contact-privacy-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 14px;
+    border: 1px solid #dce9ff;
+    border-radius: 12px;
+    background: #f6f9ff;
+    color: #58708d;
+    font-size: 0.84rem;
+    line-height: 1.6;
+}
+
+    .contact-privacy-note i {
+        color: #2563eb;
+    }
+
+
+/* Form panel */
+
+.contact-form-card {
+    padding: 32px;
+    border: 1px solid #e5ebf2;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(23, 43, 77, 0.045);
+}
+
+.contact-form-header {
+    margin-bottom: 26px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #edf1f5;
+}
+
+    .contact-form-header h2 {
+        margin-bottom: 7px;
+        color: #172b4d;
+        font-size: 1.35rem;
+        font-weight: 700;
+    }
+
+    .contact-form-header p {
+        margin: 0;
+        color: #8290a2;
+        font-size: 0.9rem;
+    }
+
+.contact-form-card .form-label {
+    margin-bottom: 8px;
+    color: #344861;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.contact-form-card .form-control,
+.contact-form-card .form-select {
+    min-height: 47px;
+    border: 1px solid #dce4ee;
+    border-radius: 10px;
+    background-color: #fff;
+    color: #263b59;
+    font-size: 0.92rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-form-card .form-control {
+    padding: 12px 14px;
+}
+
+    .contact-form-card .form-control::placeholder {
+        color: #a2adbb;
+    }
+
+    .contact-form-card .form-control:focus,
+    .contact-form-card .form-select:focus {
+        border-color: #7aa7ff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+.contact-form-card .message-textarea {
+    min-height: 155px;
+    resize: vertical;
+    line-height: 1.7;
+}
+
+.contact-form-card .validation-message {
+    display: block;
+    margin-top: 5px;
+    color: #dc3545;
+    font-size: 0.82rem;
+}
+
+.message-character-count {
+    flex-shrink: 0;
+    color: #8996a7;
+    font-size: 0.78rem;
+}
+
+.message-submit-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid #edf1f5;
+}
+
+.message-submit-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: 300px;
+    color: #7b899b;
+    font-size: 0.82rem;
+    line-height: 1.6;
+}
+
+    .message-submit-note i {
+        margin-top: 2px;
+        color: #64748b;
+    }
+
+.message-submit-button {
+    min-height: 48px;
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 10px;
+    background: #2563eb;
+    font-weight: 600;
+    box-shadow: 0 5px 14px rgba(37, 99, 235, 0.18);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+    .message-submit-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        background: #1d4ed8;
+    }
+
+    .message-submit-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+
+/* Alerts and loading */
+
+.messages-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 22px;
+    padding: 17px 19px;
+    border: 1px solid;
+    border-radius: 13px;
+}
+
+    .messages-alert > i {
+        margin-top: 2px;
+        font-size: 1.2rem;
+    }
+
+    .messages-alert p {
+        margin: 4px 0 0;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+.messages-alert-error {
+    border-color: #fecaca;
+    background: #fff5f5;
+    color: #b42318;
+}
+
+.messages-alert-success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.messages-alert-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.messages-loading {
+    padding: 65px 20px;
+    text-align: center;
+}
+
+    .messages-loading p {
+        margin-top: 15px;
+        color: #75859a;
+    }
+
+
+/* Responsive layout */
+
+@media (max-width: 767.98px) {
+    .messages-heading {
+        align-items: flex-start;
+        gap: 13px;
+    }
+
+    .messages-heading-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 13px;
+        font-size: 1.25rem;
+    }
+
+    .contact-info-card,
+    .contact-form-card {
+        padding: 23px 19px;
+        border-radius: 15px;
+    }
+
+    .message-submit-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .message-submit-note {
+        max-width: none;
+    }
+
+    .message-submit-button {
+        width: 100%;
+    }
+}

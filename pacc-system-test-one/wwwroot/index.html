@@ -87,7 +87,8 @@
                     deleteDoc,
                     Timestamp,
                     query,
-                    orderBy
+                    orderBy,
+                    serverTimestamp
                 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
@@ -1107,118 +1108,167 @@ window.firebaseAuth.deleteGalleryImage =
     };
 
 
-//==========================
-//messages
-//=======================
-window.firebaseAuth.getMessages = async function () {
+// ============================================================
+// MOBILE MESSAGES: GET ALL
+// ============================================================
 
+window.firebaseAuth.getMessages = async function () {
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
 
-    const snapshot =
-        await getDocs(
-            collection(db, "messages")
-        );
+    const snapshot = await getDocs(
+        collection(db, "mobilemessages")
+    );
 
     const messages = [];
 
-    snapshot.forEach((documentSnapshot) => {
+    snapshot.forEach((item) => {
+        const data = item.data();
 
-        const data =
-            documentSnapshot.data();
+        // Convert Firestore Timestamp to an ISO string so
+        // System.Text.Json can deserialize it into DateTime.
+        let dateValue;
 
-        let messageId =
-            parseInt(documentSnapshot.id);
+        if (data.Date && typeof data.Date.toDate === "function") {
+            dateValue = data.Date.toDate().toISOString();
+        } else if (data.Date instanceof Date) {
+            dateValue = data.Date.toISOString();
+        } else if (typeof data.Date === "string") {
+            const parsedDate = new Date(data.Date);
 
-        if (isNaN(messageId)) {
-            messageId = 0;
+            dateValue = Number.isNaN(parsedDate.getTime())
+                ? new Date(0).toISOString()
+                : parsedDate.toISOString();
+        } else {
+            dateValue = new Date(0).toISOString();
         }
-
-
-        let messageDate = null;
-
-        if (data.date) {
-
-            if (typeof data.date.toDate === "function") {
-
-                messageDate =
-                    data.date.toDate().toISOString();
-
-            } else {
-
-                messageDate =
-                    data.date;
-            }
-        }
-
 
         messages.push({
-
-            messageId: messageId,
-
-            userId:
-                Number(data.userId || 0),
-
-            title:
-                data.title || "",
-
-            content:
-                data.content || "",
-
-            date:
-                messageDate,
-
-            userName:
-                data.userName || "",
-
-            isRead:
-                data.isRead === true
-
+            documentId: item.id,
+            messageId: String(data.MessageId ?? item.id),
+            userId: String(data.UserId ?? ""),
+            userName: String(data.UserName ?? ""),
+            email: String(data.Email ?? ""),
+            phone: String(data.Phone ?? ""),
+            title: String(data.Title ?? ""),
+            content: String(data.Content ?? ""),
+            reason: String(data.Reason ?? ""),
+            date: dateValue,
+            isRead: data.IsRead === true
         });
-
     });
 
+    // Newest messages first.
+    messages.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
 
     return messages;
 };
-window.firebaseAuth.markMessageAsRead = async function (messageId) {
 
+// send message
+
+window.firebaseAuth.sendMessage = async function (message) {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error("You must be logged in to send a message.");
+    }
+
+    if (!message) {
+        throw new Error("Message details are required.");
+    }
+
+    const title = String(message.title ?? "").trim();
+    const content = String(message.content ?? "").trim();
+    const userName = String(message.userName ?? "").trim();
+    const email = String(message.email ?? "").trim();
+    const phone = String(message.phone ?? "").trim();
+    const reason = String(message.reason ?? "").trim();
+
+    if (!title || !content || !userName || !email || !reason) {
+        throw new Error("Please complete all required fields.");
+    }
+
+    const messageId = crypto.randomUUID();
+
+    const messageData = {
+        MessageId: messageId,
+        UserId: currentUser.uid,
+        UserName: userName,
+        Email: email,
+        Phone: phone,
+        Reason: reason,
+        Title: title,
+        Content: content,
+        Date: serverTimestamp(),
+        IsRead: false
+    };
+
+    const documentReference = await addDoc(
+        collection(db, "mobilemessages"),
+        messageData
+    );
+
+    return {
+        success: true,
+        messageId: messageId,
+        documentId: documentReference.id
+    };
+};
+
+
+// ============================================================
+// MOBILE MESSAGES: MARK AS READ / UNREAD
+// ============================================================
+
+window.firebaseAuth.updateMessageReadStatus = async function (
+    documentId,
+    isRead
+) {
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
 
-    const messageRef =
-        doc(
-            db,
-            "messages",
-            messageId.toString()
-        );
+    if (!documentId) {
+        throw new Error("A message document ID is required.");
+    }
 
-    await updateDoc(
-        messageRef,
-        {
-            isRead: true
-        }
+    if (typeof isRead !== "boolean") {
+        throw new Error("The read status must be true or false.");
+    }
+
+    const messageRef = doc(
+        db,
+        "mobilemessages",
+        documentId
     );
+
+    await updateDoc(messageRef, {
+        IsRead: isRead
+    });
 
     return true;
 };
 
-window.firebaseAuth.deleteMessage = async function (messageId) {
 
+// ============================================================
+// MOBILE MESSAGES: DELETE
+// ============================================================
+
+window.firebaseAuth.deleteMessage = async function (documentId) {
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
 
-    const messageRef =
-        doc(
-            db,
-            "messages",
-            messageId.toString()
-        );
+    if (!documentId) {
+        throw new Error("A message document ID is required.");
+    }
 
-    await deleteDoc(messageRef);
+    await deleteDoc(
+        doc(db, "mobilemessages", documentId)
+    );
 
     return true;
 };
