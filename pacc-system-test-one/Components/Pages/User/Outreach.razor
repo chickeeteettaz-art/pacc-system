@@ -1,5 +1,1097 @@
-﻿<h3>Outreach</h3>
+﻿@page "/user/outreach"
+
+@using System
+@using System.Linq
+@using System.Collections.Generic
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Outreach Programmes | Christian Centre</PageTitle>
+
+<div class="outreach-page">
+
+    <!-- Breadcrumb -->
+    <div class="outreach-breadcrumb">
+        <span>Christian Centre</span>
+        <i class="bi bi-chevron-right"></i>
+        <span class="active">Outreach</span>
+    </div>
+
+    <!-- Page heading -->
+    <div class="outreach-heading">
+        <div class="outreach-heading-icon">
+            <i class="bi bi-people-fill"></i>
+        </div>
+
+        <div class="flex-grow-1">
+            <h1>Outreach Programmes</h1>
+            <p>
+                Discover how Christian Centre serves, supports and connects
+                with the community.
+            </p>
+        </div>
+
+        @if (!isLoading && string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="outreach-total">
+                <i class="bi bi-heart-fill me-2"></i>
+                @FilteredPrograms.Count
+                @(FilteredPrograms.Count == 1 ? "Programme" : "Programmes")
+            </div>
+        }
+    </div>
+
+    <!-- Search and filter -->
+    <div class="outreach-toolbar">
+        <div class="outreach-search">
+            <i class="bi bi-search"></i>
+
+            <input class="form-control"
+                   type="search"
+                   placeholder="Search outreach programmes..."
+                   @bind="searchTerm"
+                   @bind:event="oninput" />
+
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button type="button"
+                        class="outreach-clear-search"
+                        aria-label="Clear search"
+                        @onclick="ClearSearch">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            }
+        </div>
+
+        <select class="form-select outreach-sort"
+                @bind="selectedSort">
+            <option value="Upcoming">Upcoming first</option>
+            <option value="Newest">Newest first</option>
+            <option value="Oldest">Oldest first</option>
+        </select>
+
+        <button type="button"
+                class="btn btn-outline-primary outreach-refresh"
+                @onclick="LoadProgramsAsync"
+                disabled="@isLoading">
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Error state -->
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="outreach-error">
+            <div class="outreach-error-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+
+            <div class="flex-grow-1">
+                <strong>Unable to load outreach programmes</strong>
+                <p>@errorMessage</p>
+            </div>
+
+            <button type="button"
+                    class="btn btn-primary"
+                    @onclick="LoadProgramsAsync">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Try again
+            </button>
+        </div>
+    }
+
+    <!-- Loading state -->
+    @if (isLoading)
+    {
+        <div class="outreach-state-panel">
+            <div class="spinner-border text-primary" role="status"></div>
+            <h5>Loading outreach programmes</h5>
+            <p>Please wait while we retrieve the latest programmes.</p>
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(errorMessage) && FilteredPrograms.Count == 0)
+    {
+        <!-- Empty state -->
+        <div class="outreach-state-panel">
+            <div class="outreach-empty-icon">
+                <i class="bi bi-people"></i>
+            </div>
+
+            @if (programs.Count == 0)
+            {
+                <h3>No outreach programmes yet</h3>
+                <p>
+                    New community outreach programmes will appear here when
+                    they are published by the church administration.
+                </p>
+            }
+            else
+            {
+                <h3>No matching programmes</h3>
+                <p>Try another search term or change the sorting option.</p>
+
+                <button type="button"
+                        class="btn btn-outline-primary mt-3"
+                        @onclick="ClearSearch">
+                    Clear search
+                </button>
+            }
+        </div>
+    }
+    else if (!isLoading && string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="outreach-results-summary">
+            <span>
+                Showing <strong>@FilteredPrograms.Count</strong>
+                @(FilteredPrograms.Count == 1 ? "programme" : "programmes")
+            </span>
+        </div>
+
+        <!-- Outreach programme cards -->
+        <div class="outreach-grid">
+            @foreach (var program in FilteredPrograms)
+            {
+                <article class="outreach-card" @key="program.OutreachId">
+
+                    <!-- Image -->
+                    <button type="button"
+                            class="outreach-image-button"
+                            aria-label="@($"View image for {program.Title}")"
+                            @onclick="() => OpenProgram(program)">
+
+                        @if (!string.IsNullOrWhiteSpace(program.ImageUrl))
+                        {
+                            <img src="@program.ImageUrl"
+                                 alt="@program.Title"
+                                 class="outreach-image"
+                                 loading="lazy"
+                                 @onerror="() => HandleImageError(program)" />
+                        }
+                        else
+                        {
+                            <div class="outreach-image-placeholder">
+                                <i class="bi bi-people-fill"></i>
+                                <span>Outreach Programme</span>
+                            </div>
+                        }
+
+                        <span class="outreach-image-overlay">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                            View details
+                        </span>
+                    </button>
+
+                    <!-- Card body -->
+                    <div class="outreach-card-body">
+
+                        <div class="outreach-date">
+                            <i class="bi bi-calendar-event"></i>
+
+                            @if (program.Date != default)
+                            {
+                                @program.Date.ToLocalTime().ToString("dd MMM yyyy")
+                            }
+                            else
+                            {
+                                <span>Date to be announced</span>
+                            }
+                        </div>
+
+                        <h2>@program.Title</h2>
+
+                        <p class="outreach-description">
+                            @GetDescriptionPreview(program.Description, program.Content)
+                        </p>
+
+                        @if (program.Date != default)
+                        {
+                            <div class="outreach-date-detail">
+                                <i class="bi bi-clock"></i>
+                                @program.Date.ToLocalTime().ToString("dddd, HH:mm")
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Card footer -->
+                    <div class="outreach-card-footer">
+                        <span class="outreach-card-label">
+                            <i class="bi bi-heart-fill me-1"></i>
+                            Community outreach
+                        </span>
+
+                        <button type="button"
+                                class="btn outreach-details-button"
+                                @onclick="() => OpenProgram(program)">
+                            Learn more
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+
+                </article>
+            }
+        </div>
+    }
+</div>
+
+<!-- Programme details modal -->
+@if (showDetails && selectedProgram is not null)
+{
+    <div class="outreach-modal-backdrop"
+         @onclick="CloseProgram">
+
+        <section class="outreach-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="outreach-modal-title"
+                 @onclick:stopPropagation="true">
+
+            <div class="outreach-modal-header">
+                <div>
+                    <span class="outreach-modal-eyebrow">
+                        <i class="bi bi-heart-fill me-2"></i>
+                        CHRISTIAN CENTRE OUTREACH
+                    </span>
+                </div>
+
+                <button type="button"
+                        class="outreach-modal-close"
+                        aria-label="Close programme details"
+                        @onclick="CloseProgram">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(selectedProgram.ImageUrl))
+            {
+                <div class="outreach-modal-image-wrapper">
+                    <img src="@selectedProgram.ImageUrl"
+                         alt="@selectedProgram.Title"
+                         class="outreach-modal-image"
+                         @onerror="() => HandleImageError(selectedProgram)" />
+                </div>
+            }
+
+            <div class="outreach-modal-content">
+
+                <div class="outreach-modal-date">
+                    <i class="bi bi-calendar-event"></i>
+
+                    @if (selectedProgram.Date != default)
+                    {
+                        @selectedProgram.Date.ToLocalTime().ToString("dddd, dd MMMM yyyy 'at' HH:mm")
+                    }
+                    else
+                    {
+                        <span>Date to be announced</span>
+                    }
+                </div>
+
+                <h2 id="outreach-modal-title">
+                    @selectedProgram.Title
+                </h2>
+
+                @if (!string.IsNullOrWhiteSpace(selectedProgram.Description))
+                {
+                    <div class="outreach-modal-section">
+                        <h3>About this programme</h3>
+                        <p class="outreach-modal-description">
+                            @selectedProgram.Description
+                        </p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(selectedProgram.Content))
+                {
+                    <div class="outreach-modal-section">
+                        <h3>Programme details</h3>
+                        <div class="outreach-modal-description outreach-content">
+                            @selectedProgram.Content
+                        </div>
+                    </div>
+                }
+
+                <div class="outreach-modal-note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>
+                        For more information about participating in this programme,
+                        please contact the church administration.
+                    </span>
+                </div>
+
+            </div>
+
+            <div class="outreach-modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        @onclick="CloseProgram">
+                    Close
+                </button>
+            </div>
+
+        </section>
+    </div>
+}
+
+<style>
+    .outreach-page {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+        color: #24364b;
+    }
+
+    .outreach-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+        color: #8391a5;
+        font-size: .9rem;
+    }
+
+        .outreach-breadcrumb i {
+            font-size: .7rem;
+            color: #b4c0ce;
+        }
+
+        .outreach-breadcrumb .active {
+            color: #3d5878;
+            font-weight: 600;
+        }
+
+    .outreach-heading {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .outreach-heading-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 62px;
+        height: 62px;
+        flex-shrink: 0;
+        border-radius: 17px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 1.5rem;
+    }
+
+    .outreach-heading h1 {
+        margin: 0 0 6px;
+        color: #172b4d;
+        font-size: clamp(1.7rem, 3vw, 2.1rem);
+        font-weight: 750;
+    }
+
+    .outreach-heading p {
+        margin: 0;
+        color: #7b8ba0;
+        line-height: 1.6;
+    }
+
+    .outreach-total {
+        margin-left: auto;
+        padding: 12px 16px;
+        white-space: nowrap;
+        border: 1px solid #e1e8f0;
+        border-radius: 12px;
+        background: #fff;
+        color: #3c526e;
+        font-size: .9rem;
+    }
+
+        .outreach-total i {
+            color: #2563eb;
+        }
+
+    .outreach-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 25px;
+        padding: 17px;
+        border: 1px solid #e5ebf2;
+        border-radius: 15px;
+        background: #fff;
+    }
+
+    .outreach-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .outreach-search > i {
+            position: absolute;
+            left: 14px;
+            color: #8795a8;
+        }
+
+        .outreach-search .form-control {
+            min-height: 44px;
+            padding: 10px 40px;
+            border-color: #dfe6ef;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+            .outreach-search .form-control:focus,
+            .outreach-sort:focus {
+                border-color: #8ab0ff;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
+            }
+
+    .outreach-clear-search {
+        position: absolute;
+        right: 8px;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #718096;
+    }
+
+    .outreach-sort {
+        width: 190px;
+        min-height: 44px;
+        flex-shrink: 0;
+        border-color: #dfe6ef;
+        border-radius: 10px;
+        box-shadow: none;
+    }
+
+    .outreach-refresh {
+        min-height: 44px;
+        flex-shrink: 0;
+        border-radius: 10px;
+    }
+
+    .outreach-results-summary {
+        margin-bottom: 18px;
+        color: #8290a3;
+        font-size: .9rem;
+    }
+
+    .outreach-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .outreach-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid #e5ebf2;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 5px 18px rgba(23, 43, 77, .035);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+        .outreach-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(23, 43, 77, .09);
+        }
+
+    .outreach-image-button {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 220px;
+        overflow: hidden;
+        padding: 0;
+        border: 0;
+        background: #edf4ff;
+        text-align: left;
+    }
+
+    .outreach-image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .3s ease;
+    }
+
+    .outreach-card:hover .outreach-image {
+        transform: scale(1.04);
+    }
+
+    .outreach-image-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        height: 100%;
+        color: #6484b6;
+        font-size: .9rem;
+    }
+
+        .outreach-image-placeholder i {
+            font-size: 2.5rem;
+        }
+
+    .outreach-image-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        background: rgba(15, 23, 42, .5);
+        color: white;
+        font-size: .9rem;
+        font-weight: 600;
+        opacity: 0;
+        transition: opacity .2s ease;
+    }
+
+    .outreach-image-button:hover .outreach-image-overlay,
+    .outreach-image-button:focus-visible .outreach-image-overlay {
+        opacity: 1;
+    }
+
+    .outreach-card-body {
+        flex: 1;
+        padding: 20px;
+    }
+
+    .outreach-date {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 13px;
+        color: #8290a3;
+        font-size: .84rem;
+    }
+
+        .outreach-date i {
+            color: #2563eb;
+        }
+
+    .outreach-card-body h2 {
+        margin-bottom: 12px;
+        color: #1c304b;
+        font-size: 1.15rem;
+        font-weight: 750;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .outreach-description {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-bottom: 16px;
+        color: #748399;
+        font-size: .91rem;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    }
+
+    .outreach-date-detail {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #637790;
+        font-size: .84rem;
+    }
+
+        .outreach-date-detail i {
+            color: #2563eb;
+        }
+
+    .outreach-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 14px 18px;
+        border-top: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+    .outreach-card-label {
+        color: #8996a8;
+        font-size: .77rem;
+        white-space: nowrap;
+    }
+
+    .outreach-details-button {
+        padding: 8px 11px;
+        border: 0;
+        border-radius: 8px;
+        background: #edf4ff;
+        color: #245ac1;
+        font-size: .84rem;
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+        .outreach-details-button:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+    .outreach-state-panel {
+        padding: 75px 20px;
+        border: 1px solid #e5ebf2;
+        border-radius: 17px;
+        background: #fff;
+        text-align: center;
+    }
+
+        .outreach-state-panel h5 {
+            margin-top: 20px;
+            color: #24364b;
+            font-weight: 700;
+        }
+
+        .outreach-state-panel p {
+            max-width: 540px;
+            margin: 8px auto 0;
+            color: #8391a5;
+            line-height: 1.7;
+        }
+
+    .outreach-empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 78px;
+        height: 78px;
+        margin: 0 auto 22px;
+        border-radius: 22px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 2rem;
+    }
+
+    .outreach-state-panel h3 {
+        margin: 0;
+        color: #24364b;
+        font-size: 1.25rem;
+        font-weight: 750;
+    }
+
+    .outreach-error {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+        padding: 18px;
+        border: 1px solid #fecaca;
+        border-radius: 14px;
+        background: #fff6f6;
+    }
+
+    .outreach-error-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 45px;
+        height: 45px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: #fee2e2;
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+
+    .outreach-error strong {
+        color: #a61b29;
+    }
+
+    .outreach-error p {
+        margin: 4px 0 0;
+        color: #c13b48;
+        overflow-wrap: anywhere;
+    }
+
+    /* Details modal */
+
+    .outreach-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-y: auto;
+        background: rgba(15, 23, 42, .58);
+        backdrop-filter: blur(3px);
+    }
+
+    .outreach-modal {
+        width: min(760px, 100%);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        border-radius: 19px;
+        background: #fff;
+        box-shadow: 0 25px 80px rgba(15, 23, 42, .25);
+        animation: outreach-modal-in .18s ease-out;
+    }
+
+    @@keyframes outreach-modal-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .outreach-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 24px;
+        border-bottom: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+    .outreach-modal-eyebrow {
+        color: #2563eb;
+        font-size: .78rem;
+        font-weight: 750;
+        letter-spacing: .06em;
+    }
+
+    .outreach-modal-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border: 1px solid #e4eaf2;
+        border-radius: 10px;
+        background: #fff;
+        color: #64748b;
+    }
+
+        .outreach-modal-close:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+    .outreach-modal-image-wrapper {
+        width: 100%;
+        max-height: 330px;
+        overflow: hidden;
+        background: #edf4ff;
+    }
+
+    .outreach-modal-image {
+        display: block;
+        width: 100%;
+        max-height: 330px;
+        object-fit: cover;
+    }
+
+    .outreach-modal-content {
+        padding: 27px;
+    }
+
+    .outreach-modal-date {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 14px;
+        color: #718198;
+        font-size: .87rem;
+    }
+
+        .outreach-modal-date i {
+            color: #2563eb;
+        }
+
+    .outreach-modal-content h2 {
+        margin-bottom: 25px;
+        color: #172b4d;
+        font-size: clamp(1.5rem, 3vw, 1.9rem);
+        font-weight: 750;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .outreach-modal-section {
+        margin-top: 22px;
+    }
+
+        .outreach-modal-section h3 {
+            margin-bottom: 10px;
+            color: #30445e;
+            font-size: 1.02rem;
+            font-weight: 750;
+        }
+
+    .outreach-modal-description {
+        margin: 0;
+        color: #586a81;
+        font-size: .95rem;
+        line-height: 1.9;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .outreach-content {
+        padding: 17px;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+    .outreach-modal-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 25px;
+        padding: 14px;
+        border-radius: 11px;
+        background: #f1f6ff;
+        color: #57708f;
+        font-size: .85rem;
+        line-height: 1.65;
+    }
+
+        .outreach-modal-note i {
+            margin-top: 3px;
+            flex-shrink: 0;
+            color: #2563eb;
+        }
+
+    .outreach-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 16px 24px;
+        border-top: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+        .outreach-modal-footer .btn {
+            min-width: 100px;
+            border-radius: 9px;
+        }
+
+    @@media (max-width: 1100px) {
+        .outreach-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .outreach-heading {
+            align-items: flex-start;
+            gap: 13px;
+            flex-wrap: wrap;
+        }
+
+        .outreach-heading-icon {
+            width: 50px;
+            height: 50px;
+        }
+
+        .outreach-total {
+            margin-left: 63px;
+        }
+
+        .outreach-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+            padding: 13px;
+        }
+
+        .outreach-sort,
+        .outreach-refresh {
+            width: 100%;
+        }
+
+        .outreach-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .outreach-image-button {
+            height: 230px;
+        }
+
+        .outreach-modal-backdrop {
+            padding: 10px;
+        }
+
+        .outreach-modal {
+            max-height: calc(100vh - 20px);
+            border-radius: 14px;
+        }
+
+        .outreach-modal-content {
+            padding: 20px;
+        }
+
+        .outreach-error {
+            flex-wrap: wrap;
+        }
+
+            .outreach-error .btn {
+                width: 100%;
+            }
+    }
+</style>
 
 @code {
+    private List<OutreachProgram> programs = new();
+    private OutreachProgram? selectedProgram;
 
+    private bool isLoading = true;
+    private bool showDetails;
+
+    private string searchTerm = string.Empty;
+    private string selectedSort = "Upcoming";
+    private string errorMessage = string.Empty;
+
+    // Track failed image URLs to avoid repeatedly rendering broken images.
+    private readonly HashSet<string> failedImageUrls =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private List<OutreachProgram> FilteredPrograms
+    {
+        get
+        {
+            IEnumerable<OutreachProgram> query = programs;
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim();
+
+                query = query.Where(p =>
+                    Contains(p.Title, term) ||
+                    Contains(p.Description, term) ||
+                    Contains(p.Content, term));
+            }
+
+            query = selectedSort switch
+            {
+                "Newest" => query.OrderByDescending(p => p.Date),
+                "Oldest" => query.OrderBy(p => p.Date),
+                _ => query.OrderBy(p =>
+                        p.Date == default || p.Date < DateTime.Now)
+                    .ThenBy(p => p.Date)
+            };
+
+            return query.ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var user = await AuthService.LoadCurrentUserAsync();
+
+            if (user is null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+            await LoadProgramsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Outreach initialization failed: {ex}");
+            errorMessage = ex.Message;
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadProgramsAsync()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            programs = await AuthService.GetOutreachProgramsAsync()
+                ?? new List<OutreachProgram>();
+
+            failedImageUrls.Clear();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Loading outreach programmes failed: {ex}");
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenProgram(OutreachProgram program)
+    {
+        selectedProgram = program;
+        showDetails = true;
+    }
+
+    private void CloseProgram()
+    {
+        showDetails = false;
+        selectedProgram = null;
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+    }
+
+    private static bool Contains(string? value, string term) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private static string GetDescriptionPreview(
+        string? description,
+        string? content)
+    {
+        var value = !string.IsNullOrWhiteSpace(description)
+            ? description.Trim()
+            : content?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(value))
+            return "Open this programme to view more information.";
+
+        return value.Length <= 145
+            ? value
+            : value[..145] + "...";
+    }
+
+    private void HandleImageError(OutreachProgram program)
+    {
+        if (!string.IsNullOrWhiteSpace(program.ImageUrl))
+        {
+            failedImageUrls.Add(program.ImageUrl);
+        }
+
+        // Keep the UI stable if an Azure Blob URL is unavailable.
+        StateHasChanged();
+    }
 }
