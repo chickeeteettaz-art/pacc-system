@@ -1,779 +1,676 @@
 ﻿@page "/admin/messages"
 @layout AdminLayout
 
+@using System
+@using System.Linq
+@using System.Collections.Generic
 @using Microsoft.JSInterop
 @using pacc_system_test_one.Models
 @using pacc_system_test_one.Services
 
 @inject FirebaseAuthService AuthService
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <PageTitle>Manage Messages</PageTitle>
 
 <div class="messages-page">
 
-    <!-- ===================================================== -->
-    <!-- PAGE HEADER -->
-    <!-- ===================================================== -->
-
-    <div class="page-header messages-page-header">
-
+    <div class="page-header mb-4">
         <div>
-
-            <div class="breadcrumb">
-                <span>Administration</span>
-                <i class="bi bi-chevron-right"></i>
-                <span>Messages</span>
+            <div class="text-muted small mb-2">
+                Administration
+                <i class="bi bi-chevron-right mx-2"></i>
+                Messages
             </div>
 
             <h1 class="page-title">
+                <i class="bi bi-chat-left-text-fill me-2 text-primary"></i>
                 Messages
             </h1>
 
             <p class="page-description">
-                View and manage messages submitted by members of the church.
+                Review enquiries and messages submitted by church members.
             </p>
-
         </div>
 
+        <button class="btn btn-outline-primary"
+                type="button"
+                @onclick="LoadMessagesAsync"
+                disabled="@IsLoading">
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Refresh
+        </button>
     </div>
 
-
-    <!-- ===================================================== -->
-    <!-- ALERTS -->
-    <!-- ===================================================== -->
     @if (!string.IsNullOrWhiteSpace(SuccessMessage))
     {
-        <div class="message-alert success-alert">
-
-            <i class="bi bi-check-circle-fill"></i>
-
-            <div>
-                <strong>Success</strong>
-                <span>@SuccessMessage</span>
-            </div>
-
+        <div class="alert alert-success alert-dismissible">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @SuccessMessage
             <button type="button"
-                    @onclick="ClearMessages">
-                <i class="bi bi-x-lg"></i>
+                    class="btn-close"
+                    @onclick="ClearAlerts">
             </button>
-
         </div>
     }
-
 
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="message-alert error-alert">
-
-            <i class="bi bi-exclamation-circle-fill"></i>
-
-            <div>
-                <strong>Error</strong>
-                <span>@ErrorMessage</span>
-            </div>
-
+        <div class="alert alert-danger alert-dismissible">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @ErrorMessage
             <button type="button"
-                    @onclick="ClearMessages">
-                <i class="bi bi-x-lg"></i>
+                    class="btn-close"
+                    @onclick="ClearAlerts">
             </button>
-
         </div>
     }
 
+    @* Statistics *@
+    <div class="row g-3 mb-4">
 
-    <!-- ===================================================== -->
-    <!-- STATISTICS -->
-    <!-- ===================================================== -->
-
-    <div class="message-stats">
-
-        <div class="message-stat-card">
-
-            <div class="message-stat-icon blue">
-                <i class="bi bi-envelope"></i>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-primary-subtle text-primary p-3">
+                        <i class="bi bi-envelope fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Total messages</div>
+                        <div class="fs-3 fw-bold">@Messages.Count</div>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <span>Total Messages</span>
-                <strong>@Messages.Count</strong>
-            </div>
-
         </div>
 
-
-        <div class="message-stat-card">
-
-            <div class="message-stat-icon orange">
-                <i class="bi bi-envelope-exclamation"></i>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-warning-subtle text-warning p-3">
+                        <i class="bi bi-envelope-exclamation fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Unread</div>
+                        <div class="fs-3 fw-bold">@UnreadCount</div>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <span>Unread</span>
-                <strong>@UnreadCount</strong>
-            </div>
-
         </div>
 
-
-        <div class="message-stat-card">
-
-            <div class="message-stat-icon green">
-                <i class="bi bi-envelope-open"></i>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-success-subtle text-success p-3">
+                        <i class="bi bi-envelope-open fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Read</div>
+                        <div class="fs-3 fw-bold">@ReadCount</div>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <span>Read</span>
-                <strong>@ReadCount</strong>
-            </div>
-
         </div>
 
-
-        <div class="message-stat-card">
-
-            <div class="message-stat-icon purple">
-                <i class="bi bi-chat-left-text"></i>
+        <div class="col-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 bg-info-subtle text-info p-3">
+                        <i class="bi bi-funnel fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="text-muted small">Matching messages</div>
+                        <div class="fs-3 fw-bold">@FilteredMessages.Count</div>
+                    </div>
+                </div>
             </div>
-
-            <div>
-                <span>Showing</span>
-                <strong>@FilteredMessages.Count</strong>
-            </div>
-
         </div>
 
     </div>
 
+    @* Main panel *@
+    <div class="card border-0 shadow-sm">
 
-    <!-- ===================================================== -->
-    <!-- MAIN CONTENT -->
-    <!-- ===================================================== -->
+        <div class="card-body p-3 p-lg-4">
 
-    <div class="messages-card">
+            <div class="d-flex flex-column flex-lg-row
+                justify-content-between align-items-lg-center gap-3 mb-4">
 
-        <!-- TOOLBAR -->
+                <div>
+                    <h5 class="fw-bold mb-1">Received messages</h5>
+                    <p class="text-muted small mb-0">
+                        Open a message to view the sender's contact information and enquiry.
+                    </p>
+                </div>
 
-        <div class="messages-toolbar">
+                <div class="d-flex flex-column flex-sm-row gap-2">
 
-            <div class="toolbar-title">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input class="form-control"
+                               placeholder="Search messages..."
+                               @bind="SearchTerm"
+                               @bind:event="oninput" />
+                        @if (!string.IsNullOrWhiteSpace(SearchTerm))
+                        {
+                            <button class="btn btn-outline-secondary"
+                                    type="button"
+                                    title="Clear search"
+                                    @onclick="ClearSearch">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        }
+                    </div>
 
-                <h2>
-                    User Messages
-                </h2>
+                    <select class="form-select"
+                            style="min-width:150px"
+                            @bind="SelectedFilter">
+                        <option value="All">All messages</option>
+                        <option value="Unread">Unread</option>
+                        <option value="Read">Read</option>
+                    </select>
 
-                <p>
-                    Messages received from church members and users.
-                </p>
+                </div>
 
             </div>
 
+            @if (IsLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="text-muted mt-3 mb-0">Loading messages from Firestore...</p>
+                </div>
+            }
+            else if (FilteredMessages.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <div class="mb-3 text-primary">
+                        <i class="bi bi-inbox display-3"></i>
+                    </div>
 
-            <div class="toolbar-controls">
+                    <h5 class="fw-bold">
+                        @(Messages.Count == 0
+                            ? "No messages received"
+                            : "No matching messages")
+                    </h5>
 
-                <!-- SEARCH -->
-
-                <div class="message-search">
-
-                    <i class="bi bi-search"></i>
-
-                    <input type="text"
-                           placeholder="Search messages..."
-                           value="@SearchTerm"
-                           @oninput="HandleSearch" />
+                    <p class="text-muted">
+                        @(Messages.Count == 0
+                            ? "Messages submitted by users will appear here."
+                            : "Try another search term or filter.")
+                    </p>
 
                     @if (!string.IsNullOrWhiteSpace(SearchTerm))
                     {
-                        <button type="button"
+                        <button class="btn btn-outline-primary"
                                 @onclick="ClearSearch">
-
-                            <i class="bi bi-x"></i>
-
+                            Clear search
                         </button>
                     }
-
                 </div>
-
-
-                <!-- FILTER -->
-
-                <div class="message-filter">
-
-                    <select @bind="SelectedFilter">
-
-                        <option value="All">
-                            All Messages
-                        </option>
-
-                        <option value="Unread">
-                            Unread
-                        </option>
-
-                        <option value="Read">
-                            Read
-                        </option>
-
-                    </select>
-
-                    <i class="bi bi-chevron-down"></i>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ================================================= -->
-        <!-- LOADING -->
-        <!-- ================================================= -->
-        @if (IsLoading)
-        {
-            <div class="messages-loading">
-
-                <div class="spinner-border text-primary"
-                     role="status">
-                </div>
-
-                <h3>
-                    Loading messages...
-                </h3>
-
-                <p>
-                    Retrieving messages from the database.
-                </p>
-
-            </div>
-        }
-
-
-        <!-- ================================================= -->
-        <!-- EMPTY -->
-        <!-- ================================================= -->
-        @if (!FilteredMessages.Any())
-        {
-        <div class="messages-empty">
-
-            <div class="empty-icon">
-
-                <i class="bi bi-envelope-open"></i>
-
-            </div>
-
-
-            @if (!string.IsNullOrWhiteSpace(SearchTerm))
-            {
-                <h3>
-                    No messages found
-                </h3>
-
-                <p>
-                    No messages match your search.
-                </p>
-
-                <button class="btn btn-outline-primary"
-                        @onclick="ClearSearch">
-
-                    <i class="bi bi-arrow-counterclockwise"></i>
-
-                    Clear Search
-
-                </button>
             }
             else
             {
-                <h3>
-                    No messages
-                </h3>
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
 
-                <p>
-                    There are currently no messages from users.
-                </p>
+                        <thead class="table-light">
+                            <tr>
+                                <th style="min-width:180px">Sender</th>
+                                <th style="min-width:180px">Subject</th>
+                                <th style="min-width:220px">Message</th>
+                                <th style="min-width:130px">Reason</th>
+                                <th style="min-width:145px">Date received</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var message in FilteredMessages)
+                            {
+                                <tr @key="message.DocumentId"
+                                    class="@(!message.IsRead ? "table-primary-subtle" : "")">
+
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary-subtle
+                                                text-primary d-flex align-items-center
+                                                justify-content-center fw-bold"
+                                                 style="width:40px;height:40px;flex-shrink:0">
+                                                @GetInitials(message.UserName)
+                                            </div>
+
+                                            <div class="min-width-0">
+                                                <div class="fw-semibold text-break">
+                                                    @(string.IsNullOrWhiteSpace(message.UserName)
+                                                        ? "Unknown sender"
+                                                        : message.UserName)
+                                                </div>
+                                                <div class="small text-muted text-break">
+                                                    @message.Email
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold">
+                                            @(string.IsNullOrWhiteSpace(message.Title)
+                                                ? "(No subject)"
+                                                : message.Title)
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(message.Phone))
+                                        {
+                                            <div class="small text-muted">
+                                                <i class="bi bi-telephone me-1"></i>
+                                                @message.Phone
+                                            </div>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <div class="text-muted message-content-preview">
+                                            @GetPreview(message.Content)
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge rounded-pill bg-light text-dark border">
+                                            @(string.IsNullOrWhiteSpace(message.Reason)
+                                                ? "General"
+                                                : message.Reason)
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="fw-semibold small">
+                                            @FormatDate(message.Date, "dd MMM yyyy")
+                                        </div>
+                                        <div class="small text-muted">
+                                            @FormatDate(message.Date, "HH:mm")
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        @if (message.IsRead)
+                                        {
+                                            <span class="badge rounded-pill bg-success-subtle text-success">
+                                                <i class="bi bi-envelope-open me-1"></i>
+                                                Read
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                Unread
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        <div class="d-flex justify-content-end gap-1">
+
+                                            <button class="btn btn-sm btn-light border"
+                                                    type="button"
+                                                    title="View message"
+                                                    @onclick="() => OpenMessageAsync(message)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+
+                                            <button class="btn btn-sm btn-light border"
+                                                    type="button"
+                                                    title="@(message.IsRead ? "Mark unread" : "Mark read")"
+                                                    disabled="@IsBusy(message)"
+                                                    @onclick="() => ToggleReadAsync(message)">
+                                                <i class="bi @(message.IsRead ? "bi-envelope" : "bi-envelope-open")"></i>
+                                            </button>
+
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    type="button"
+                                                    title="Delete message"
+                                                    disabled="@IsBusy(message)"
+                                                    @onclick="() => DeleteMessageAsync(message)">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            }
+                        </tbody>
+
+                    </table>
+                </div>
             }
 
         </div>
-        }
-
-
-        <!-- ================================================= -->
-        <!-- MESSAGES TABLE -->
-        <!-- ================================================= -->
-        @if (FilteredMessages.Any())
-        {
-        <div class="messages-table-container">
-
-            <table class="messages-table">
-
-                <thead>
-
-                    <tr>
-
-                        <th class="status-column">
-                        </th>
-
-                        <th>
-                            Sender
-                        </th>
-
-                        <th>
-                            Subject
-                        </th>
-
-                        <th>
-                            Message
-                        </th>
-
-                        <th>
-                            Date
-                        </th>
-
-                        <th>
-                            Status
-                        </th>
-
-                        <th class="actions-column">
-                            Actions
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    @foreach (var message in FilteredMessages)
-                    {
-                        <tr class="@(!message.IsRead ? "unread-row" : "")">
-
-
-                            <!-- STATUS DOT -->
-
-                            <td class="status-column">
-
-                                @if (!message.IsRead)
-                                {
-                                    <span class="unread-dot"></span>
-                                }
-
-                            </td>
-
-
-                            <!-- USER -->
-
-                            <td>
-
-                                <div class="sender-cell">
-
-                                    <div class="sender-avatar">
-                                        @GetInitials(message.UserName)
-                                    </div>
-
-                                    <div class="sender-details">
-
-                                        <strong>
-                                            @(string.IsNullOrWhiteSpace(message.UserName)
-                                                ? "Unknown User"
-                                                : message.UserName)
-                                        </strong>
-
-                                        <span>
-                                            User ID: @message.UserId
-                                        </span>
-
-                                    </div>
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- TITLE -->
-
-                            <td>
-
-                                <div class="message-subject">
-
-                                    <strong>
-                                        @message.Title
-                                    </strong>
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- CONTENT PREVIEW -->
-
-                            <td>
-
-                                <div class="message-preview">
-
-                                    @GetPreview(message.Content)
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- DATE -->
-
-                            <td>
-
-                                <div class="message-date">
-
-                                    <strong>
-                                        @message.Date.ToLocalTime().ToString("dd MMM yyyy")
-                                    </strong>
-
-                                    <span>
-                                        @message.Date.ToLocalTime().ToString("HH:mm")
-                                    </span>
-
-                                </div>
-
-                            </td>
-
-
-                            <!-- STATUS -->
-
-                            <td>
-
-                                @if (message.IsRead)
-                                {
-                                    <span class="status-badge read">
-
-                                        <i class="bi bi-envelope-open"></i>
-
-                                        Read
-
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge unread">
-
-                                        <i class="bi bi-envelope"></i>
-
-                                        Unread
-
-                                    </span>
-                                }
-
-                            </td>
-
-
-                            <!-- ACTIONS -->
-
-                            <td>
-
-                                <div class="message-actions">
-
-                                    <button type="button"
-                                            class="table-action view"
-                                            title="View message"
-                                            @onclick="() => OpenMessage(message)">
-
-                                        <i class="bi bi-eye"></i>
-
-                                    </button>
-
-
-                                    @if (!message.IsRead)
-                                    {
-                                        <button type="button"
-                                                class="table-action read"
-                                                title="Mark as read"
-                                                @onclick="() => MarkAsReadAsync(message)">
-
-                                            <i class="bi bi-envelope-open"></i>
-
-                                        </button>
-                                    }
-
-
-                                    <button type="button"
-                                            class="table-action delete"
-                                            title="Delete message"
-                                            @onclick="() => DeleteMessageAsync(message)">
-
-                                        <i class="bi bi-trash3"></i>
-
-                                    </button>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-        }
-
     </div>
 
 </div>
 
-
-<!-- ========================================================= -->
-<!-- MESSAGE VIEW MODAL -->
-<!-- ========================================================= -->
-@if (ShowMessageModal && SelectedMessage != null)
+@* Message details modal *@
+@if (ShowMessageModal && SelectedMessage is not null)
 {
-    <div class="message-modal-backdrop"
+    <div class="mobile-message-backdrop"
          @onclick="CloseMessage">
 
-        <div class="message-modal"
+        <div class="mobile-message-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="message-modal-title"
              @onclick:stopPropagation="true">
 
+            <div class="d-flex justify-content-between align-items-start
+                gap-3 p-4 border-bottom">
 
-            <!-- MODAL HEADER -->
-
-            <div class="message-modal-header">
-
-                <div class="modal-sender">
-
-                    <div class="modal-avatar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-primary-subtle text-primary
+                        d-flex align-items-center justify-content-center fw-bold"
+                         style="width:48px;height:48px;flex-shrink:0">
                         @GetInitials(SelectedMessage.UserName)
                     </div>
 
                     <div>
-
-                        <strong>
+                        <h5 class="fw-bold mb-1">
                             @(string.IsNullOrWhiteSpace(SelectedMessage.UserName)
-                                ? "Unknown User"
+                                ? "Unknown sender"
                                 : SelectedMessage.UserName)
-                        </strong>
+                        </h5>
+                        <div class="small text-muted">
+                            @FormatDate(SelectedMessage.Date, "dd MMM yyyy, HH:mm")
+                        </div>
+                    </div>
+                </div>
 
-                        <span>
-                            @SelectedMessage.Date.ToLocalTime()
-                            .ToString("dd MMM yyyy, HH:mm")
+                <button class="btn btn-light"
+                        type="button"
+                        aria-label="Close"
+                        @onclick="CloseMessage">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+
+            </div>
+
+            <div class="p-4">
+
+                <div class="small text-muted fw-semibold mb-1">SUBJECT</div>
+                <h4 id="message-modal-title" class="fw-bold mb-4">
+                    @(string.IsNullOrWhiteSpace(SelectedMessage.Title)
+                        ? "(No subject)"
+                        : SelectedMessage.Title)
+                </h4>
+
+                <div class="row g-3 mb-4">
+
+                    <div class="col-md-6">
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-envelope me-1"></i>Email
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(SelectedMessage.Email))
+                        {
+                            <a href="@($"mailto:{SelectedMessage.Email}")">
+                                @SelectedMessage.Email
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not provided</span>
+                        }
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-telephone me-1"></i>Phone
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(SelectedMessage.Phone))
+                        {
+                            <a href="@($"tel:{SelectedMessage.Phone}")">
+                                @SelectedMessage.Phone
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not provided</span>
+                        }
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="small text-muted mb-1">Reason for contact</div>
+                        <span class="badge bg-light text-dark border">
+                            @(string.IsNullOrWhiteSpace(SelectedMessage.Reason)
+                                ? "General"
+                                : SelectedMessage.Reason)
                         </span>
+                    </div>
 
+                    <div class="col-md-6">
+                        <div class="small text-muted mb-1">User ID</div>
+                        <span class="small text-break">
+                            @(string.IsNullOrWhiteSpace(SelectedMessage.UserId)
+                                ? "Not available"
+                                : SelectedMessage.UserId)
+                        </span>
                     </div>
 
                 </div>
 
+                <hr />
 
-                <button type="button"
-                        class="modal-close-button"
-                        @onclick="CloseMessage">
+                <div class="small text-muted fw-semibold mb-2">MESSAGE</div>
 
-                    <i class="bi bi-x-lg"></i>
-
-                </button>
-
-            </div>
-
-
-            <!-- MODAL BODY -->
-
-            <div class="message-modal-body">
-
-                <div class="message-detail-label">
-                    Subject
-                </div>
-
-                <h2 class="message-detail-title">
-                    @SelectedMessage.Title
-                </h2>
-
-
-                <div class="message-detail-divider"></div>
-
-
-                <div class="message-detail-label">
-                    Message
-                </div>
-
-                <div class="message-full-content">
-
-                    @SelectedMessage.Content
-
+                <div class="mobile-message-full-content">
+                    @(string.IsNullOrWhiteSpace(SelectedMessage.Content)
+                        ? "No message content."
+                        : SelectedMessage.Content)
                 </div>
 
             </div>
 
-
-            <!-- MODAL FOOTER -->
-
-            <div class="message-modal-footer">
+            <div class="d-flex flex-wrap justify-content-end gap-2
+                p-3 border-top bg-light">
 
                 @if (!SelectedMessage.IsRead)
                 {
-                    <button type="button"
-                            class="btn btn-primary"
-                            @onclick="() => MarkAsReadFromModalAsync(SelectedMessage)">
-
-                        <i class="bi bi-envelope-open"></i>
-
-                        Mark as Read
-
+                    <button class="btn btn-primary"
+                            type="button"
+                            disabled="@IsBusy(SelectedMessage)"
+                            @onclick="() => ToggleReadAsync(SelectedMessage)">
+                        <i class="bi bi-envelope-open me-2"></i>
+                        Mark as read
+                    </button>
+                }
+                else
+                {
+                    <button class="btn btn-outline-secondary"
+                            type="button"
+                            disabled="@IsBusy(SelectedMessage)"
+                            @onclick="() => ToggleReadAsync(SelectedMessage)">
+                        <i class="bi bi-envelope me-2"></i>
+                        Mark as unread
                     </button>
                 }
 
-                <button type="button"
-                        class="btn btn-outline-danger"
-                        @onclick="() => DeleteMessageFromModalAsync(SelectedMessage)">
-
-                    <i class="bi bi-trash3"></i>
-
+                <button class="btn btn-outline-danger"
+                        type="button"
+                        disabled="@IsBusy(SelectedMessage)"
+                        @onclick="() => DeleteMessageAsync(SelectedMessage)">
+                    <i class="bi bi-trash3 me-2"></i>
                     Delete
-
                 </button>
 
-                <button type="button"
-                        class="btn btn-light"
+                <button class="btn btn-light border"
+                        type="button"
                         @onclick="CloseMessage">
-
                     Close
-
                 </button>
 
             </div>
 
         </div>
-
     </div>
 }
 
+<style>
+    .messages-page {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .messages-page .page-title {
+        font-size: clamp(1.65rem, 3vw, 2rem);
+        font-weight: 750;
+        color: #172b4d;
+    }
+
+    .messages-page .page-description {
+        color: #708198;
+        margin-bottom: 0;
+    }
+
+    .message-content-preview {
+        max-width: 250px;
+        overflow-wrap: anywhere;
+        line-height: 1.5;
+    }
+
+    .mobile-message-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.55);
+        overflow-y: auto;
+    }
+
+    .mobile-message-modal {
+        width: min(760px, 100%);
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 25px 80px rgba(15, 23, 42, 0.25);
+    }
+
+    .mobile-message-full-content {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        line-height: 1.8;
+        color: #334155;
+        min-height: 80px;
+    }
+
+    @@media (max-width: 576px) {
+        .mobile-message-backdrop {
+            padding: 0.5rem;
+        }
+
+        .mobile-message-modal {
+            max-height: calc(100vh - 1rem);
+            border-radius: 12px;
+        }
+    }
+</style>
 
 @code {
+    private List<MobileMessage> Messages = new();
+    private MobileMessage? SelectedMessage;
 
-    // =========================================================
-    // DATA
-    // =========================================================
-
-    private List<Message> Messages = new();
-
-    private Message? SelectedMessage;
-
-
-    // =========================================================
-    // STATE
-    // =========================================================
+    private readonly HashSet<string> BusyDocumentIds = new();
 
     private bool IsLoading = true;
-
     private bool ShowMessageModal;
 
     private string SearchTerm = string.Empty;
-
     private string SelectedFilter = "All";
 
     private string? SuccessMessage;
-
     private string? ErrorMessage;
 
+    private int UnreadCount => Messages.Count(m => !m.IsRead);
+    private int ReadCount => Messages.Count(m => m.IsRead);
 
-    // =========================================================
-    // FILTERED MESSAGES
-    // =========================================================
-
-    private List<Message> FilteredMessages
+    private List<MobileMessage> FilteredMessages
     {
         get
         {
-            IEnumerable<Message> query = Messages;
-
-
-            // Filter by status
+            IEnumerable<MobileMessage> result = Messages;
 
             if (SelectedFilter == "Unread")
-            {
-                query = query.Where(x => !x.IsRead);
-            }
+                result = result.Where(m => !m.IsRead);
             else if (SelectedFilter == "Read")
-            {
-                query = query.Where(x => x.IsRead);
-            }
-
-
-            // Search
+                result = result.Where(m => m.IsRead);
 
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
-                query = query.Where(x =>
-                    (x.Title ?? "")
-                        .Contains(
-                            SearchTerm,
-                            StringComparison.OrdinalIgnoreCase)
-                    ||
-                    (x.Content ?? "")
-                        .Contains(
-                            SearchTerm,
-                            StringComparison.OrdinalIgnoreCase)
-                    ||
-                    (x.UserName ?? "")
-                        .Contains(
-                            SearchTerm,
-                            StringComparison.OrdinalIgnoreCase)
-                );
+                var search = SearchTerm.Trim();
+
+                result = result.Where(m =>
+                    Contains(m.UserName, search) ||
+                    Contains(m.Email, search) ||
+                    Contains(m.Phone, search) ||
+                    Contains(m.Title, search) ||
+                    Contains(m.Content, search) ||
+                    Contains(m.Reason, search) ||
+                    Contains(m.UserId, search) ||
+                    Contains(m.MessageId, search));
             }
 
-
-            return query
-                .OrderByDescending(x => x.Date)
+            return result
+                .OrderByDescending(m => m.Date)
                 .ToList();
         }
     }
-
-
-    // =========================================================
-    // STATISTICS
-    // =========================================================
-
-    private int UnreadCount =>
-        Messages.Count(x => !x.IsRead);
-
-
-    private int ReadCount =>
-        Messages.Count(x => x.IsRead);
-
-
-    // =========================================================
-    // INITIALIZE
-    // =========================================================
 
     protected override async Task OnInitializedAsync()
     {
         await LoadMessagesAsync();
     }
 
-
-    // =========================================================
-    // LOAD
-    // =========================================================
-
     private async Task LoadMessagesAsync()
     {
-        IsLoading = true;
+        if (IsLoading && Messages.Count > 0)
+            return;
 
-        ClearMessages();
+        IsLoading = true;
+        ErrorMessage = null;
+        SuccessMessage = null;
 
         try
         {
-            Messages =
-                await AuthService.GetMessagesAsync()
-                ?? new List<Message>();
+            var user = await AuthService.LoadCurrentUserAsync();
 
-            Messages =
-                Messages
-                    .OrderByDescending(x => x.Date)
-                    .ToList();
+            if (user is null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+            if (!string.Equals(
+                user.UserType,
+                "Admin",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                Navigation.NavigateTo("/user/dashboard", true);
+                return;
+            }
+
+            Messages = await AuthService.GetMessagesAsync()
+                ?? new List<MobileMessage>();
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
-                $"Load messages error: {ex.Message}");
+            Console.WriteLine($"Loading mobile messages failed: {ex}");
 
             ErrorMessage =
-                "Unable to load messages. Please try again.";
+                $"Unable to load messages: {GetErrorMessage(ex)}";
         }
         finally
         {
@@ -781,40 +678,14 @@
         }
     }
 
-
-    // =========================================================
-    // SEARCH
-    // =========================================================
-
-    private void HandleSearch(ChangeEventArgs e)
-    {
-        SearchTerm =
-            e.Value?.ToString() ?? string.Empty;
-    }
-
-
-    private void ClearSearch()
-    {
-        SearchTerm = string.Empty;
-    }
-
-
-    // =========================================================
-    // OPEN MESSAGE
-    // =========================================================
-
-    private async Task OpenMessage(Message message)
+    private async Task OpenMessageAsync(MobileMessage message)
     {
         SelectedMessage = message;
-
         ShowMessageModal = true;
 
         if (!message.IsRead)
-        {
-            await MarkAsReadAsync(message);
-        }
+            await SetReadStatusAsync(message, true);
     }
-
 
     private void CloseMessage()
     {
@@ -822,140 +693,162 @@
         SelectedMessage = null;
     }
 
-
-    // =========================================================
-    // MARK AS READ
-    // =========================================================
-
-    private async Task MarkAsReadAsync(Message message)
+    private async Task ToggleReadAsync(MobileMessage message)
     {
+        await SetReadStatusAsync(message, !message.IsRead);
+    }
+
+    private async Task SetReadStatusAsync(
+        MobileMessage message,
+        bool isRead)
+    {
+        if (string.IsNullOrWhiteSpace(message.DocumentId))
+        {
+            ErrorMessage =
+                "This message has no Firestore document ID. Refresh the page and try again.";
+            return;
+        }
+
+        if (!BusyDocumentIds.Add(message.DocumentId))
+            return;
+
+        ErrorMessage = null;
+        SuccessMessage = null;
+
         try
         {
-            await AuthService.MarkMessageAsReadAsync(
-                Convert.ToInt32(message.MessageId));
+            await AuthService.UpdateMessageReadStatusAsync(
+                message.DocumentId,
+                isRead);
 
-            message.IsRead = true;
+            message.IsRead = isRead;
 
-            StateHasChanged();
+            // Keep the selected modal instance in sync.
+            if (SelectedMessage?.DocumentId == message.DocumentId)
+                SelectedMessage.IsRead = isRead;
+
+            SuccessMessage = isRead
+                ? "Message marked as read."
+                : "Message marked as unread.";
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
-                $"Mark message read error: {ex.Message}");
+            Console.WriteLine($"Updating message status failed: {ex}");
 
             ErrorMessage =
-                "Unable to mark the message as read.";
+                $"Unable to update message status: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            BusyDocumentIds.Remove(message.DocumentId);
         }
     }
 
-
-    private async Task MarkAsReadFromModalAsync(
-        Message message)
+    private async Task DeleteMessageAsync(MobileMessage message)
     {
-        await MarkAsReadAsync(message);
+        if (string.IsNullOrWhiteSpace(message.DocumentId))
+        {
+            ErrorMessage =
+                "This message has no Firestore document ID. Refresh the page and try again.";
+            return;
+        }
 
-        SuccessMessage =
-            "Message marked as read.";
-    }
+        if (!BusyDocumentIds.Add(message.DocumentId))
+            return;
 
-
-    // =========================================================
-    // DELETE
-    // =========================================================
-
-    private async Task DeleteMessageAsync(
-        Message message)
-    {
         try
         {
-            var confirmed =
-                await JS.InvokeAsync<bool>(
-                    "confirm",
-                    $"Are you sure you want to delete the message \"{message.Title}\"?");
+            var confirmed = await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Delete the message \"{message.Title}\" from {message.UserName}?");
 
             if (!confirmed)
                 return;
 
+            await AuthService.DeleteMessageAsync(message.DocumentId);
 
-            await AuthService.DeleteMessageAsync(
-                Convert.ToInt32(message.MessageId));
+            Messages.RemoveAll(m => m.DocumentId == message.DocumentId);
 
-
-            Messages.Remove(message);
-
-
-            if (SelectedMessage?.MessageId ==
-                message.MessageId)
-            {
+            if (SelectedMessage?.DocumentId == message.DocumentId)
                 CloseMessage();
-            }
 
-
-            SuccessMessage =
-                "Message deleted successfully.";
+            SuccessMessage = "Message deleted successfully.";
+            ErrorMessage = null;
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
-                $"Delete message error: {ex.Message}");
+            Console.WriteLine($"Deleting mobile message failed: {ex}");
 
             ErrorMessage =
-                "Unable to delete the message.";
+                $"Unable to delete message: {GetErrorMessage(ex)}";
+        }
+        finally
+        {
+            BusyDocumentIds.Remove(message.DocumentId);
         }
     }
 
+    private bool IsBusy(MobileMessage message) =>
+        !string.IsNullOrWhiteSpace(message.DocumentId) &&
+        BusyDocumentIds.Contains(message.DocumentId);
 
-    private async Task DeleteMessageFromModalAsync(
-        Message message)
-    {
-        await DeleteMessageAsync(message);
-    }
+    private static bool Contains(string? source, string search) =>
+        !string.IsNullOrWhiteSpace(source) &&
+        source.Contains(search, StringComparison.OrdinalIgnoreCase);
 
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private static string GetPreview(
-        string? content)
+    private static string GetPreview(string? content)
     {
         if (string.IsNullOrWhiteSpace(content))
-            return "No message content";
+            return "No message content.";
 
-        content = content.Trim();
+        var value = content.Trim();
 
-        if (content.Length <= 75)
-            return content;
-
-        return content.Substring(0, 75) + "...";
+        return value.Length <= 85
+            ? value
+            : value[..85] + "...";
     }
 
-
-    private static string GetInitials(
-        string? name)
+    private static string GetInitials(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return "?";
 
-        var parts =
-            name.Trim()
-                .Split(
-                    ' ',
-                    StringSplitOptions.RemoveEmptyEntries);
+        var parts = name.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries);
 
         if (parts.Length == 1)
-        {
-            return parts[0]
-                .Substring(0, 1)
-                .ToUpper();
-        }
+            return parts[0][..1].ToUpperInvariant();
 
-        return $"{parts[0][0]}{parts[^1][0]}"
-            .ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
     }
 
+    private static string FormatDate(DateTime date, string format)
+    {
+        if (date == default)
+            return "Date unavailable";
 
-    private void ClearMessages()
+        return date.ToLocalTime().ToString(format);
+    }
+
+    private static string GetErrorMessage(Exception ex)
+    {
+        while (ex is AggregateException aggregate &&
+               aggregate.InnerExceptions.Count == 1)
+        {
+            ex = aggregate.InnerExceptions[0];
+        }
+
+        return ex.Message;
+    }
+
+    private void ClearSearch()
+    {
+        SearchTerm = string.Empty;
+    }
+
+    private void ClearAlerts()
     {
         SuccessMessage = null;
         ErrorMessage = null;
