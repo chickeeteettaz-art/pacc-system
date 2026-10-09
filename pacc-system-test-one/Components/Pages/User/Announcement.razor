@@ -1,5 +1,1127 @@
-﻿<h3>Announcement</h3>
+﻿@page "/user/announcements"
+
+@using System
+@using System.Linq
+@using System.Collections.Generic
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Announcements | Christian Centre</PageTitle>
+
+<div class="announcement-page">
+
+    <!-- Breadcrumb -->
+    <div class="announcement-breadcrumb">
+        <span>Christian Centre</span>
+        <i class="bi bi-chevron-right"></i>
+        <span class="active">Announcements</span>
+    </div>
+
+    <!-- Page heading -->
+    <div class="announcement-heading">
+        <div class="announcement-heading-icon">
+            <i class="bi bi-megaphone-fill"></i>
+        </div>
+
+        <div class="flex-grow-1">
+            <h1>Announcements</h1>
+            <p>Stay up to date with news, events, and updates from our church.</p>
+        </div>
+
+        @if (!isLoading && announcements.Count > 0)
+        {
+            <div class="announcement-total">
+                <i class="bi bi-megaphone me-2"></i>
+                @announcements.Count @(announcements.Count == 1 ? "Announcement" : "Announcements")
+            </div>
+        }
+    </div>
+
+    <!-- Search and filters -->
+    <div class="announcement-toolbar">
+        <div class="announcement-search">
+            <i class="bi bi-search"></i>
+            <input type="text"
+                   class="form-control"
+                   placeholder="Search announcements..."
+                   @bind="searchTerm"
+                   @bind:event="oninput" />
+
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button type="button"
+                        class="announcement-clear-search"
+                        aria-label="Clear search"
+                        @onclick="ClearSearch">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            }
+        </div>
+
+        <div class="announcement-filter">
+            <i class="bi bi-funnel"></i>
+            <select class="form-select"
+                    @bind="selectedCategory">
+                <option value="All">All categories</option>
+                @foreach (var category in Categories)
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </div>
+
+        <button class="btn btn-outline-primary announcement-refresh"
+                type="button"
+                @onclick="LoadAnnouncementsAsync"
+                disabled="@isLoading">
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Refresh
+        </button>
+    </div>
+
+    <!-- Error state -->
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="announcement-alert announcement-alert-error">
+            <div class="announcement-alert-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+
+            <div class="flex-grow-1">
+                <strong>Unable to load announcements</strong>
+                <p>@errorMessage</p>
+            </div>
+
+            <button class="btn btn-primary"
+                    type="button"
+                    @onclick="LoadAnnouncementsAsync">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Try again
+            </button>
+        </div>
+    }
+
+    <!-- Loading state -->
+    @if (isLoading)
+    {
+        <div class="announcement-loading">
+            <div class="spinner-border text-primary" role="status"></div>
+            <h5>Loading announcements</h5>
+            <p>Please wait while we retrieve the latest church updates.</p>
+        </div>
+    }
+    else if (string.IsNullOrWhiteSpace(errorMessage) && FilteredAnnouncements.Count == 0)
+    {
+        <!-- Empty state -->
+        <div class="announcement-empty">
+            <div class="announcement-empty-icon">
+                <i class="bi bi-megaphone"></i>
+            </div>
+
+            @if (announcements.Count == 0)
+            {
+                <h3>No announcements yet</h3>
+                <p>New announcements from the church administration will appear here.</p>
+            }
+            else
+            {
+                <h3>No matching announcements</h3>
+                <p>Try changing your search term or selecting another category.</p>
+
+                <button class="btn btn-outline-primary mt-2"
+                        type="button"
+                        @onclick="ClearFilters">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Clear filters
+                </button>
+            }
+        </div>
+    }
+    else if (!isLoading && string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <!-- Results summary -->
+        <div class="announcement-results-summary">
+            <div>
+                <span class="fw-semibold">@FilteredAnnouncements.Count</span>
+                @(FilteredAnnouncements.Count == 1 ? "announcement" : "announcements") found
+            </div>
+
+            @if (selectedCategory != "All")
+            {
+                
+                <span class="announcement-category-chip">
+                    @selectedCategory
+                    
+                    <button type="button"
+                            aria-label="Remove category filter"
+                            @onclick= '() => selectedCategory = "All"'>
+                        <i class="bi bi-x"></i>
+                    </button>
+                </span>
+            }
+        </div>
+
+        <!-- Announcement cards -->
+        <div class="announcement-grid">
+            @foreach (var item in FilteredAnnouncements)
+            {
+                <article class="announcement-card" @key="item.AnnouncementId">
+
+                    <div class="announcement-card-top">
+                        <div class="announcement-card-icon">
+                            <i class="@GetCategoryIcon(item.Category)"></i>
+                        </div>
+
+                        <span class="announcement-category">
+                            @(string.IsNullOrWhiteSpace(item.Category)
+                                ? "General"
+                                : item.Category)
+                        </span>
+                    </div>
+
+                    <div class="announcement-card-body">
+                        <div class="announcement-card-date">
+                            <i class="bi bi-calendar-event"></i>
+                            @FormatDate(item.AnnouncementDate)
+                        </div>
+
+                        <h2>@item.Title</h2>
+
+                        <p class="announcement-description">
+                            @GetDescriptionPreview(item.Description)
+                        </p>
+
+                        @if (!string.IsNullOrWhiteSpace(item.Location))
+                        {
+                            <div class="announcement-location">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span>@item.Location</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="announcement-card-footer">
+                        <span class="announcement-read-label">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Church update
+                        </span>
+
+                        <button class="btn announcement-open-button"
+                                type="button"
+                                @onclick="() => OpenAnnouncement(item)">
+                            Read details
+                            <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+
+                </article>
+            }
+        </div>
+    }
+
+</div>
+
+<!-- Announcement details modal -->
+@if (showDetails && selectedAnnouncement is not null)
+{
+    <div class="announcement-modal-backdrop"
+         @onclick="CloseAnnouncement">
+
+        <section class="announcement-modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="announcement-modal-title"
+                 @onclick:stopPropagation="true">
+
+            <div class="announcement-modal-header">
+                <div class="announcement-modal-heading">
+                    <div class="announcement-modal-icon">
+                        <i class="@GetCategoryIcon(selectedAnnouncement.Category)"></i>
+                    </div>
+
+                    <div>
+                        <span class="announcement-category">
+                            @(string.IsNullOrWhiteSpace(selectedAnnouncement.Category)
+                                ? "General"
+                                : selectedAnnouncement.Category)
+                        </span>
+
+                        <div class="announcement-modal-date">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            @FormatDate(selectedAnnouncement.AnnouncementDate)
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button"
+                        class="announcement-modal-close"
+                        aria-label="Close announcement"
+                        @onclick="CloseAnnouncement">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <div class="announcement-modal-content">
+                <h2 id="announcement-modal-title">
+                    @selectedAnnouncement.Title
+                </h2>
+
+                @if (!string.IsNullOrWhiteSpace(selectedAnnouncement.Location))
+                {
+                    <div class="announcement-modal-location">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <div>
+                            <span>Location</span>
+                            <strong>@selectedAnnouncement.Location</strong>
+                        </div>
+                    </div>
+                }
+
+                <div class="announcement-full-description">
+                    @if (string.IsNullOrWhiteSpace(selectedAnnouncement.Description))
+                    {
+                        <p>No additional details have been provided.</p>
+                    }
+                    else
+                    {
+                        @selectedAnnouncement.Description
+                    }
+                </div>
+
+                <div class="announcement-modal-note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>
+                        For further information, please contact the church administration.
+                    </span>
+                </div>
+            </div>
+
+            <div class="announcement-modal-footer">
+                <button type="button"
+                        class="btn btn-primary"
+                        @onclick="CloseAnnouncement">
+                    <i class="bi bi-check2 me-2"></i>
+                    Done
+                </button>
+            </div>
+
+        </section>
+    </div>
+}
+
+<style>
+    .announcement-page {
+        width: 100%;
+        max-width: 1600px;
+        margin: 0 auto;
+        color: #24364b;
+    }
+
+    .announcement-breadcrumb {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
+        color: #8391a5;
+        font-size: .9rem;
+    }
+
+        .announcement-breadcrumb i {
+            font-size: .7rem;
+            color: #b4c0ce;
+        }
+
+        .announcement-breadcrumb .active {
+            color: #3d5878;
+            font-weight: 600;
+        }
+
+    .announcement-heading {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .announcement-heading-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 62px;
+        height: 62px;
+        flex-shrink: 0;
+        border-radius: 17px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 1.5rem;
+    }
+
+    .announcement-heading h1 {
+        margin: 0 0 6px;
+        color: #172b4d;
+        font-size: clamp(1.7rem, 3vw, 2.1rem);
+        font-weight: 750;
+    }
+
+    .announcement-heading p {
+        margin: 0;
+        color: #7b8ba0;
+        line-height: 1.6;
+    }
+
+    .announcement-total {
+        margin-left: auto;
+        padding: 12px 16px;
+        white-space: nowrap;
+        border: 1px solid #e1e8f0;
+        border-radius: 12px;
+        background: white;
+        color: #3c526e;
+        font-size: .9rem;
+        box-shadow: 0 3px 10px rgba(15, 23, 42, .025);
+    }
+
+        .announcement-total i {
+            color: #2563eb;
+        }
+
+    .announcement-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+        padding: 17px;
+        border: 1px solid #e5ebf2;
+        border-radius: 15px;
+        background: #fff;
+    }
+
+    .announcement-search {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .announcement-search > i {
+            position: absolute;
+            left: 14px;
+            z-index: 1;
+            color: #8795a8;
+        }
+
+        .announcement-search .form-control {
+            min-height: 44px;
+            padding: 10px 40px;
+            border-color: #dfe6ef;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+            .announcement-search .form-control:focus,
+            .announcement-filter .form-select:focus {
+                border-color: #8ab0ff;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
+            }
+
+    .announcement-clear-search {
+        position: absolute;
+        right: 8px;
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: #718096;
+    }
+
+    .announcement-filter {
+        position: relative;
+        width: 200px;
+        flex-shrink: 0;
+    }
+
+        .announcement-filter > i {
+            position: absolute;
+            top: 50%;
+            left: 13px;
+            z-index: 1;
+            color: #718096;
+            transform: translateY(-50%);
+        }
+
+        .announcement-filter .form-select {
+            min-height: 44px;
+            padding-left: 38px;
+            border-color: #dfe6ef;
+            border-radius: 10px;
+            box-shadow: none;
+        }
+
+    .announcement-refresh {
+        min-height: 44px;
+        flex-shrink: 0;
+        border-radius: 10px;
+    }
+
+    .announcement-results-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+        color: #8290a3;
+        font-size: .9rem;
+    }
+
+    .announcement-category-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 5px 10px;
+        border-radius: 20px;
+        background: #edf4ff;
+        color: #245ac1;
+    }
+
+        .announcement-category-chip button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
+        }
+
+    .announcement-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .announcement-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid #e5ebf2;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 5px 18px rgba(23, 43, 77, .035);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+        .announcement-card:hover {
+            transform: translateY(-3px);
+            border-color: #d6e3f8;
+            box-shadow: 0 12px 30px rgba(23, 43, 77, .08);
+        }
+
+    .announcement-card-top {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 20px 0;
+    }
+
+    .announcement-card-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        flex-shrink: 0;
+        border-radius: 13px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 1.25rem;
+    }
+
+    .announcement-category {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        max-width: 100%;
+        padding: 6px 10px;
+        border-radius: 30px;
+        background: #edf4ff;
+        color: #245ac1;
+        font-size: .78rem;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }
+
+    .announcement-card-body {
+        flex: 1;
+        padding: 20px;
+    }
+
+    .announcement-card-date {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        color: #8592a5;
+        font-size: .83rem;
+    }
+
+        .announcement-card-date i {
+            color: #2563eb;
+        }
+
+    .announcement-card-body h2 {
+        margin-bottom: 12px;
+        color: #1c304b;
+        font-size: 1.12rem;
+        font-weight: 750;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .announcement-description {
+        display: -webkit-box;
+        overflow: hidden;
+        margin: 0;
+        color: #748399;
+        font-size: .91rem;
+        line-height: 1.75;
+        overflow-wrap: anywhere;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 4;
+    }
+
+    .announcement-location {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-top: 17px;
+        color: #637790;
+        font-size: .86rem;
+        overflow-wrap: anywhere;
+    }
+
+        .announcement-location i {
+            margin-top: 3px;
+            flex-shrink: 0;
+            color: #2563eb;
+        }
+
+    .announcement-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 20px;
+        border-top: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+    .announcement-read-label {
+        color: #8996a8;
+        font-size: .78rem;
+        white-space: nowrap;
+    }
+
+    .announcement-open-button {
+        padding: 8px 11px;
+        border: 0;
+        border-radius: 8px;
+        background: #edf4ff;
+        color: #245ac1;
+        font-size: .84rem;
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+        .announcement-open-button:hover {
+            background: #2563eb;
+            color: white;
+        }
+
+    .announcement-loading,
+    .announcement-empty {
+        padding: 75px 20px;
+        border: 1px solid #e5ebf2;
+        border-radius: 17px;
+        background: #fff;
+        text-align: center;
+    }
+
+        .announcement-loading h5 {
+            margin-top: 20px;
+            color: #24364b;
+            font-weight: 700;
+        }
+
+        .announcement-loading p,
+        .announcement-empty p {
+            margin: 8px 0 0;
+            color: #8391a5;
+            line-height: 1.7;
+        }
+
+    .announcement-empty-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 78px;
+        height: 78px;
+        margin: 0 auto 22px;
+        border-radius: 22px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 2rem;
+    }
+
+    .announcement-empty h3 {
+        margin: 0;
+        color: #24364b;
+        font-size: 1.25rem;
+        font-weight: 750;
+    }
+
+    .announcement-alert {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+        padding: 18px;
+        border: 1px solid;
+        border-radius: 14px;
+    }
+
+    .announcement-alert-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 45px;
+        height: 45px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: rgba(220, 53, 69, .09);
+        color: #dc3545;
+        font-size: 1.2rem;
+    }
+
+    .announcement-alert strong {
+        color: #a61b29;
+    }
+
+    .announcement-alert p {
+        margin: 4px 0 0;
+        color: #c13b48;
+        overflow-wrap: anywhere;
+    }
+
+    .announcement-alert-error {
+        border-color: #fecaca;
+        background: #fff6f6;
+    }
+
+    /* Details modal */
+
+    .announcement-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-y: auto;
+        background: rgba(15, 23, 42, .58);
+        backdrop-filter: blur(3px);
+    }
+
+    .announcement-modal {
+        width: min(720px, 100%);
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        border: 1px solid rgba(255,255,255,.6);
+        border-radius: 19px;
+        background: white;
+        box-shadow: 0 25px 80px rgba(15, 23, 42, .25);
+        animation: announcement-modal-in .18s ease-out;
+    }
+
+    @@keyframes announcement-modal-in {
+        from {
+            opacity: 0;
+            transform: translateY(10px) scale(.99);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .announcement-modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 24px;
+        border-bottom: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+    .announcement-modal-heading {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+    }
+
+    .announcement-modal-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+        border-radius: 14px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 1.35rem;
+    }
+
+    .announcement-modal-date {
+        margin-top: 8px;
+        color: #8290a3;
+        font-size: .85rem;
+    }
+
+    .announcement-modal-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border: 1px solid #e4eaf2;
+        border-radius: 10px;
+        background: white;
+        color: #64748b;
+    }
+
+        .announcement-modal-close:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+    .announcement-modal-content {
+        padding: 28px;
+    }
+
+        .announcement-modal-content h2 {
+            margin: 0 0 22px;
+            color: #172b4d;
+            font-size: clamp(1.4rem, 3vw, 1.85rem);
+            font-weight: 750;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+        }
+
+    .announcement-modal-location {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        margin-bottom: 24px;
+        padding: 15px;
+        border: 1px solid #e5ebf2;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+        .announcement-modal-location > i {
+            margin-top: 3px;
+            color: #2563eb;
+            font-size: 1.15rem;
+        }
+
+        .announcement-modal-location span,
+        .announcement-modal-location strong {
+            display: block;
+        }
+
+        .announcement-modal-location span {
+            margin-bottom: 4px;
+            color: #8391a5;
+            font-size: .78rem;
+        }
+
+        .announcement-modal-location strong {
+            color: #30445e;
+            overflow-wrap: anywhere;
+        }
+
+    .announcement-full-description {
+        color: #50627a;
+        font-size: .96rem;
+        line-height: 1.9;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+        .announcement-full-description p {
+            margin-bottom: 0;
+        }
+
+    .announcement-modal-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-top: 26px;
+        padding: 14px;
+        border-radius: 11px;
+        background: #f1f6ff;
+        color: #57708f;
+        font-size: .85rem;
+        line-height: 1.65;
+    }
+
+        .announcement-modal-note i {
+            margin-top: 3px;
+            flex-shrink: 0;
+            color: #2563eb;
+        }
+
+    .announcement-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        padding: 17px 24px;
+        border-top: 1px solid #edf1f6;
+        background: #fcfdff;
+    }
+
+        .announcement-modal-footer .btn {
+            min-width: 110px;
+            border-radius: 9px;
+        }
+
+    @@media (max-width: 1100px) {
+        .announcement-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .announcement-heading {
+            align-items: flex-start;
+            gap: 13px;
+            flex-wrap: wrap;
+        }
+
+        .announcement-heading-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 13px;
+        }
+
+        .announcement-total {
+            margin-left: 63px;
+        }
+
+        .announcement-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+            padding: 13px;
+        }
+
+        .announcement-filter {
+            width: 100%;
+        }
+
+        .announcement-refresh {
+            width: 100%;
+        }
+
+        .announcement-grid {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .announcement-modal-backdrop {
+            padding: 10px;
+        }
+
+        .announcement-modal {
+            max-height: calc(100vh - 20px);
+            border-radius: 14px;
+        }
+
+        .announcement-modal-header,
+        .announcement-modal-content {
+            padding: 19px;
+        }
+
+        .announcement-modal-footer {
+            padding: 14px 19px;
+        }
+
+        .announcement-alert {
+            flex-wrap: wrap;
+        }
+
+            .announcement-alert .btn {
+                width: 100%;
+            }
+    }
+</style>
 
 @code {
+    private List<pacc_system_test_one.Models.Announcement> announcements = new();
+    private pacc_system_test_one.Models.Announcement? selectedAnnouncement;
 
+    private bool isLoading = true;
+    private bool showDetails;
+
+    private string searchTerm = string.Empty;
+    private string selectedCategory = "All";
+    private string errorMessage = string.Empty;
+
+    private List<string> Categories =>
+        announcements
+            .Select(a => string.IsNullOrWhiteSpace(a.Category)
+                ? "General"
+                : a.Category.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c)
+            .ToList();
+
+    private List<pacc_system_test_one.Models.Announcement> FilteredAnnouncements
+    {
+        get
+        {
+            IEnumerable<pacc_system_test_one.Models.Announcement> query = announcements;
+
+            if (!string.Equals(selectedCategory, "All",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a =>
+                    string.Equals(
+                        string.IsNullOrWhiteSpace(a.Category)
+                            ? "General"
+                            : a.Category.Trim(),
+                        selectedCategory,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.Trim();
+
+                query = query.Where(a =>
+                    Contains(a.Title, term) ||
+                    Contains(a.Description, term) ||
+                    Contains(a.Location, term) ||
+                    Contains(a.Category, term));
+            }
+
+            return query
+                .OrderByDescending(a => a.AnnouncementDate)
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await AuthService.LoadCurrentUserAsync();
+
+        if (user is null)
+        {
+            Navigation.NavigateTo("/login", true);
+            return;
+        }
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task LoadAnnouncementsAsync()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            announcements = await AuthService.GetAnnouncementsAsync()
+                ?? new List<pacc_system_test_one.Models.Announcement>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Loading announcements failed: {ex}");
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenAnnouncement(pacc_system_test_one.Models.Announcement announcement)
+    {
+        selectedAnnouncement = announcement;
+        showDetails = true;
+    }
+
+    private void CloseAnnouncement()
+    {
+        showDetails = false;
+        selectedAnnouncement = null;
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+    }
+
+    private void ClearFilters()
+    {
+        searchTerm = string.Empty;
+        selectedCategory = "All";
+    }
+
+    private static bool Contains(string? source, string term) =>
+        !string.IsNullOrWhiteSpace(source) &&
+        source.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    private static string GetDescriptionPreview(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            return "Open this announcement to view more details.";
+
+        var text = description.Trim();
+
+        return text.Length <= 150
+            ? text
+            : text[..150] + "...";
+    }
+
+    private static string FormatDate(DateTime date)
+    {
+        return date == default
+            ? "Date to be announced"
+            : date.ToLocalTime().ToString("dddd, dd MMMM yyyy");
+    }
+
+    private static string GetCategoryIcon(string? category)
+    {
+        return category?.Trim().ToUpperInvariant() switch
+        {
+            "EVENT" or "EVENTS" => "bi bi-calendar-event-fill",
+            "SERVICE" or "SERVICES" => "bi bi-calendar2-week-fill",
+            "MEETING" or "MEETINGS" => "bi bi-people-fill",
+            "OUTREACH" => "bi bi-heart-fill",
+            "AWARENESS" or "AWARENESS EVENT" => "bi bi-megaphone-fill",
+            "URGENT" or "IMPORTANT" => "bi bi-exclamation-circle-fill",
+            "CLOSURE" or "ROAD CLOSURE" => "bi bi-cone-striped",
+            _ => "bi bi-megaphone-fill"
+        };
+    }
 }
