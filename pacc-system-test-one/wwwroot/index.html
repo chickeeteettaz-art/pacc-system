@@ -563,6 +563,57 @@
 
 };
 
+window.firebaseAuth.getMyDonations = async function () {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error("You must be signed in to view your donations.");
+    }
+
+    // Wait until Firebase Auth has restored the current session
+    // if your module already provides this helper.
+    const donationsQuery = query(
+        collection(db, "donations"),
+        where("userId", "==", currentUser.uid)
+    );
+
+    const snapshot = await getDocs(donationsQuery);
+
+    const donations = snapshot.docs.map((item) => {
+        const data = item.data();
+
+        let dateValue = data.date ?? data.Date ?? null;
+
+        if (dateValue && typeof dateValue.toDate === "function") {
+            dateValue = dateValue.toDate().toISOString();
+        } else if (dateValue instanceof Date) {
+            dateValue = dateValue.toISOString();
+        } else if (typeof dateValue === "string") {
+            const parsedDate = new Date(dateValue);
+            dateValue = Number.isNaN(parsedDate.getTime())
+                ? new Date(0).toISOString()
+                : parsedDate.toISOString();
+        } else {
+            dateValue = new Date(0).toISOString();
+        }
+
+        return {
+            donationId: String(data.donationId ?? data.DonationId ?? item.id),
+            userId: String(data.userId ?? data.UserId ?? ""),
+            amount: Number(data.amount ?? data.Amount ?? 0),
+            date: dateValue,
+            donorName: String(data.donorName ?? data.DonorName ?? ""),
+            givingType: String(data.givingType ?? data.GivingType ?? ""),
+            paymentMethod: String(data.paymentMethod ?? data.PaymentMethod ?? "")
+        };
+    });
+
+    donations.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    return donations;
+};
 window.firebaseAuth.getMyMessages = async function () {
     const currentUser = auth.currentUser;
 

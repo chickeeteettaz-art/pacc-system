@@ -1029,6 +1029,36 @@ namespace pacc_system_test_one.Services
             }
         }
 
+        
+        public async Task<List<Donation>> GetMyDonationsAsync()
+        {
+            try
+            {
+                await WaitForFirebaseAsync();
+
+                var currentUser = await LoadCurrentUserAsync();
+
+                if (currentUser is null || string.IsNullOrWhiteSpace(currentUser.Uid))
+                {
+                    throw new InvalidOperationException(
+                        "You must be signed in to view your donations.");
+                }
+
+                var donations = await _jsRuntime.InvokeAsync<List<Donation>>(
+                    "firebaseAuth.getMyDonations");
+
+                return donations ?? new List<Donation>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving donations: {ex}");
+
+                throw new Exception(
+                    "Unable to retrieve your donations from Firebase.", ex);
+            }
+        }
+
+
         // =====================================================
         // LOGOUT
         // =====================================================
