@@ -88,7 +88,8 @@
                     Timestamp,
                     query,
                     orderBy,
-                    serverTimestamp
+                    serverTimestamp,
+                    where
                 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 
@@ -562,6 +563,139 @@
 
 };
 
+window.firebaseAuth.getMyMessages = async function () {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser || !currentUser.email) {
+        throw new Error("You must be logged in to retrieve your messages.");
+    }
+
+    const userEmail = currentUser.email.trim();
+
+    // Filter messages belonging to the signed-in user's email.
+    const messagesQuery = query(
+        collection(db, "mobilemessages"),
+        where("Email", "==", userEmail)
+    );
+
+    const snapshot = await getDocs(messagesQuery);
+
+    const messages = snapshot.docs.map((item) => {
+        const data = item.data();
+
+        let dateValue;
+
+        if (data.Date && typeof data.Date.toDate === "function") {
+            dateValue = data.Date.toDate().toISOString();
+        } else if (data.Date instanceof Date) {
+            dateValue = data.Date.toISOString();
+        } else if (typeof data.Date === "string") {
+            const parsedDate = new Date(data.Date);
+
+            dateValue = Number.isNaN(parsedDate.getTime())
+                ? new Date(0).toISOString()
+                : parsedDate.toISOString();
+        } else {
+            dateValue = new Date(0).toISOString();
+        }
+
+        return {
+            messageId: String(data.MessageId ?? item.id),
+            userId: String(data.UserId ?? ""),
+            userName: String(data.UserName ?? ""),
+            email: String(data.Email ?? ""),
+            phone: String(data.Phone ?? ""),
+            title: String(data.Title ?? ""),
+            content: String(data.Content ?? ""),
+            reason: String(data.Reason ?? ""),
+            date: dateValue,
+            isRead: data.IsRead === true
+        };
+    });
+
+    messages.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    return messages;
+};
+
+window.firebaseAuth.getMyProfile = async function () {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error("You must be signed in to view your profile.");
+    }
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const snapshot = await getDoc(userRef);
+
+    if (!snapshot.exists()) {
+        throw new Error("Your Firestore profile does not exist.");
+    }
+
+    const data = snapshot.data();
+
+    // Do not trust a document belonging to a different Firebase user.
+    if (data.firebaseUid && data.firebaseUid !== currentUser.uid) {
+        throw new Error("The profile does not match your signed-in account.");
+    }
+
+    return {
+        userId: snapshot.id,
+        firebaseUid: data.firebaseUid || currentUser.uid,
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        emailAddress: data.emailAddress || currentUser.email || "",
+        userType: data.userType || "User"
+    };
+};
+
+
+window.firebaseAuth.updateMyProfile = async function (firstName, lastName) {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
+        throw new Error("You must be signed in to update your profile.");
+    }
+
+    firstName = String(firstName ?? "").trim();
+    lastName = String(lastName ?? "").trim();
+
+    if (!firstName || !lastName) {
+        throw new Error("First name and last name are required.");
+    }
+
+    if (firstName.length > 50 || lastName.length > 50) {
+        throw new Error("Names cannot exceed 50 characters.");
+    }
+
+    const userRef = doc(db, "users", currentUser.uid);
+    const snapshot = await getDoc(userRef);
+
+    if (!snapshot.exists()) {
+        throw new Error("Your Firestore profile does not exist.");
+    }
+
+    const data = snapshot.data();
+
+    if (data.firebaseUid && data.firebaseUid !== currentUser.uid) {
+        throw new Error("The profile does not match your signed-in account.");
+    }
+
+    // Only update the editable fields. Never accept the role or UID
+    // from the client-side form.
+    await updateDoc(userRef, {
+        firstName: firstName,
+        lastName: lastName
+    });
+
+    return {
+        success: true,
+        firstName: firstName,
+        lastName: lastName
+    };
+};
 window.firebaseAuth.getUsers = async function () {
 
     const currentUser = auth.currentUser;

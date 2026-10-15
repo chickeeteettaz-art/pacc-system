@@ -19,7 +19,6 @@
         <div class="messages-heading-icon">
             <i class="bi bi-chat-left-text-fill"></i>
         </div>
-
         <div>
             <h1>Contact Us</h1>
             <p>We would love to hear from you. Send us a message below.</p>
@@ -33,38 +32,55 @@
             <p>Preparing your message form...</p>
         </div>
     }
-    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    else if (!isAuthenticated)
     {
-        <div class="messages-alert messages-alert-error" role="alert">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <div>
-                <strong>Unable to complete the request</strong>
-                <p>@errorMessage</p>
-            </div>
-        </div>
-    }
-
-    @if (!string.IsNullOrWhiteSpace(successMessage))
-    {
-        <div class="messages-alert messages-alert-success" role="status">
-            <i class="bi bi-check-circle-fill"></i>
-            <div>
-                <strong>Message sent successfully</strong>
-                <p>@successMessage</p>
-            </div>
-            <button type="button"
-                    class="messages-alert-close"
-                    aria-label="Dismiss"
-                    @onclick="ClearSuccess">
-                <i class="bi bi-x-lg"></i>
+        <div class="alert alert-warning">
+            Please sign in to access your messages.
+            <button class="btn btn-primary btn-sm ms-2"
+                    @onclick="@(() => Navigation.NavigateTo("/login", true))">
+                Sign in
             </button>
         </div>
     }
-
-    @if (!isLoading && isAuthenticated)
+    else
     {
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="messages-alert messages-alert-error" role="alert">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                    <strong>Unable to complete the request</strong>
+                    <p>@errorMessage</p>
+                </div>
+                <button type="button"
+                        class="messages-alert-close"
+                        aria-label="Dismiss"
+                        @onclick="ClearError">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="messages-alert messages-alert-success" role="status">
+                <i class="bi bi-check-circle-fill"></i>
+                <div>
+                    <strong>Message sent successfully</strong>
+                    <p>@successMessage</p>
+                </div>
+                <button type="button"
+                        class="messages-alert-close"
+                        aria-label="Dismiss"
+                        @onclick="ClearSuccess">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        }
+
         <div class="row g-4">
 
+            <!-- Contact information -->
             <div class="col-lg-4">
                 <div class="contact-info-card">
                     <div class="contact-info-icon">
@@ -104,30 +120,21 @@
 
                     <div class="contact-privacy-note">
                         <i class="bi bi-shield-check"></i>
-                        Your message will be sent to the church administration
-                        team.
+                        Your message will be sent to the church administration team.
                     </div>
                 </div>
             </div>
 
+            <!-- Contact form -->
             <div class="col-lg-8">
                 <div class="contact-form-card">
-
                     <div class="contact-form-header">
                         <h2>Send us a message</h2>
                         <p>Fields marked with * are required.</p>
                     </div>
 
-                    <EditForm Model="form" OnValidSubmit="SubmitMessageAsync">
+                    <EditForm Model="@form" OnValidSubmit="SubmitMessageAsync">
                         <DataAnnotationsValidator />
-
-                        @if (!string.IsNullOrWhiteSpace(errorMessage))
-                        {
-                            <div class="alert alert-danger" role="alert">
-                                <i class="bi bi-exclamation-circle me-2"></i>
-                                @errorMessage
-                            </div>
-                        }
 
                         <div class="row g-3">
 
@@ -135,12 +142,10 @@
                                 <label class="form-label" for="senderName">
                                     Your name *
                                 </label>
-
                                 <InputText id="senderName"
                                            class="form-control"
                                            @bind-Value="form.UserName"
                                            placeholder="Enter your full name" />
-
                                 <ValidationMessage For="@(() => form.UserName)" />
                             </div>
 
@@ -148,13 +153,11 @@
                                 <label class="form-label" for="senderEmail">
                                     Email address *
                                 </label>
-
                                 <InputText id="senderEmail"
                                            class="form-control"
                                            inputmode="email"
                                            @bind-Value="form.Email"
                                            placeholder="you@example.com" />
-
                                 <ValidationMessage For="@(() => form.Email)" />
                             </div>
 
@@ -162,12 +165,10 @@
                                 <label class="form-label" for="senderPhone">
                                     Phone number
                                 </label>
-
                                 <InputText id="senderPhone"
                                            class="form-control"
                                            @bind-Value="form.Phone"
                                            placeholder="Enter your phone number" />
-
                                 <ValidationMessage For="@(() => form.Phone)" />
                             </div>
 
@@ -175,7 +176,6 @@
                                 <label class="form-label" for="messageReason">
                                     Reason for contacting us *
                                 </label>
-
                                 <InputSelect id="messageReason"
                                              class="form-select"
                                              @bind-Value="form.Reason">
@@ -188,7 +188,6 @@
                                     <option value="SUPPORT">Request for assistance</option>
                                     <option value="OTHER">Other</option>
                                 </InputSelect>
-
                                 <ValidationMessage For="@(() => form.Reason)" />
                             </div>
 
@@ -196,12 +195,10 @@
                                 <label class="form-label" for="messageTitle">
                                     Subject *
                                 </label>
-
                                 <InputText id="messageTitle"
                                            class="form-control"
                                            @bind-Value="form.Title"
                                            placeholder="What would you like to discuss?" />
-
                                 <ValidationMessage For="@(() => form.Title)" />
                             </div>
 
@@ -209,7 +206,6 @@
                                 <label class="form-label" for="messageContent">
                                     Your message *
                                 </label>
-
                                 <InputTextArea id="messageContent"
                                                class="form-control message-textarea"
                                                @bind-Value="form.Content"
@@ -223,19 +219,17 @@
                                     </span>
                                 </div>
                             </div>
-
                         </div>
 
                         <div class="message-submit-footer">
                             <div class="message-submit-note">
                                 <i class="bi bi-lock-fill"></i>
-                                Your account details are used to identify your message.
+                                Your account details identify your message.
                             </div>
 
                             <button type="submit"
                                     class="btn btn-primary message-submit-button"
                                     disabled="@isSubmitting">
-
                                 @if (isSubmitting)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"
@@ -252,7 +246,195 @@
                     </EditForm>
                 </div>
             </div>
+
+            <!-- My messages -->
+            <div class="col-12">
+                <section class="my-messages-card">
+
+                    <div class="my-messages-heading">
+                        <div>
+                            <h2>
+                                <i class="bi bi-inbox me-2"></i>
+                                My Messages
+                            </h2>
+                            <p>Messages you have sent to Christian Centre.</p>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="my-messages-count">
+                                @myMessages.Count message@(myMessages.Count == 1 ? "" : "s")
+                            </span>
+
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    @onclick="LoadMyMessagesAsync"
+                                    disabled="@isFetchingMyMessages">
+                                <i class="bi bi-arrow-clockwise me-1"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (isLoadingMyMessages)
+                    {
+                        <div class="my-messages-state">
+                            <div class="spinner-border spinner-border-sm text-primary"
+                                 role="status"></div>
+                            <span>Loading your messages...</span>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(messagesLoadError))
+                    {
+                        <div class="alert alert-danger mb-0">
+                            <i class="bi bi-exclamation-circle me-2"></i>
+                            @messagesLoadError
+
+                            <button type="button"
+                                    class="btn btn-outline-danger btn-sm ms-2"
+                                    @onclick="LoadMyMessagesAsync"
+                                    disabled="@isFetchingMyMessages">
+                                Try again
+                            </button>
+                        </div>
+                    }
+                    else if (myMessages.Count == 0)
+                    {
+                        <div class="my-messages-empty">
+                            <div class="my-messages-empty-icon">
+                                <i class="bi bi-chat-square-text"></i>
+                            </div>
+                            <h3>No messages yet</h3>
+                            <p>Messages you send to the church will appear here.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="my-messages-list">
+                            @foreach (var message in myMessages)
+                            {
+                                <article class="my-message-item" @key="message.MessageId">
+                                    <div class="my-message-icon">
+                                        <i class="bi bi-envelope-paper"></i>
+                                    </div>
+
+                                    <div class="my-message-content">
+                                        <div class="my-message-topline">
+                                            <h3>@message.Title</h3>
+
+                                            <span class="my-message-status @(message.IsRead ? "read" : "unread")">
+                                                <i class="bi @(message.IsRead ? "bi-check2-all" : "bi-clock")"></i>
+                                                @(message.IsRead ? "Read" : "Awaiting review")
+                                            </span>
+                                        </div>
+
+                                        <div class="my-message-meta">
+                                            <span>
+                                                <i class="bi bi-tag me-1"></i>
+                                                @FormatReason(message.Reason)
+                                            </span>
+                                            <span>
+                                                <i class="bi bi-calendar3 me-1"></i>
+                                                @FormatDate(message.Date)
+                                            </span>
+                                        </div>
+
+                                        <p class="my-message-preview">
+                                            @GetPreview(message.Content)
+                                        </p>
+
+                                        <button type="button"
+                                                class="my-message-view-button"
+                                                @onclick="() => OpenMessage(message)">
+                                            View message
+                                            <i class="bi bi-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
         </div>
+
+        <!-- Message details modal -->
+        @if (selectedMessage is not null)
+        {
+            <div class="message-detail-backdrop" @onclick="CloseMessage">
+                <section class="message-detail-modal"
+                         role="dialog"
+                         aria-modal="true"
+                         aria-labelledby="messageDetailTitle"
+                         @onclick:stopPropagation="true">
+
+                    <div class="message-detail-header">
+                        <div class="message-detail-header-icon">
+                            <i class="bi bi-envelope-open"></i>
+                        </div>
+
+                        <button type="button"
+                                class="message-detail-close"
+                                aria-label="Close message"
+                                @onclick="CloseMessage">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+
+                        <h2 id="messageDetailTitle">@selectedMessage.Title</h2>
+                        <p>Message sent to Christian Centre</p>
+                    </div>
+
+                    <div class="message-detail-body">
+                        <div class="message-detail-meta">
+                            <div>
+                                <span>Reason</span>
+                                <strong>@FormatReason(selectedMessage.Reason)</strong>
+                            </div>
+                            <div>
+                                <span>Date sent</span>
+                                <strong>@FormatDate(selectedMessage.Date)</strong>
+                            </div>
+                            <div>
+                                <span>Email address</span>
+                                <strong>@selectedMessage.Email</strong>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(selectedMessage.Phone))
+                            {
+                                <div>
+                                    <span>Phone number</span>
+                                    <strong>@selectedMessage.Phone</strong>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="message-detail-text">
+                            <h3>Your message</h3>
+                            <p>@selectedMessage.Content</p>
+                        </div>
+
+                        <div class="message-detail-status">
+                            <i class="bi @(selectedMessage.IsRead ? "bi-check-circle-fill" : "bi-hourglass-split")"></i>
+                            @if (selectedMessage.IsRead)
+                            {
+                                <span>The administration team has marked this message as read.</span>
+                            }
+                            else
+                            {
+                                <span>Your message has been submitted and is awaiting review.</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="message-detail-footer">
+                        <button type="button"
+                                class="btn btn-primary"
+                                @onclick="CloseMessage">
+                            Close
+                        </button>
+                    </div>
+                </section>
+            </div>
+        }
     }
 </div>
 
@@ -261,8 +443,15 @@
     private bool isAuthenticated;
     private bool isSubmitting;
 
+    private bool isLoadingMyMessages = true;
+    private bool isFetchingMyMessages;
+
     private string errorMessage = string.Empty;
     private string successMessage = string.Empty;
+    private string messagesLoadError = string.Empty;
+
+    private List<MobileMessage> myMessages = new();
+    private MobileMessage? selectedMessage;
 
     private MessageForm form = new();
 
@@ -283,15 +472,17 @@
             form.UserName = $"{user.FirstName} {user.LastName}".Trim();
 
             if (string.IsNullOrWhiteSpace(form.UserName))
-            {
                 form.UserName = AuthService.GetDisplayName(user.EmailAddress);
-            }
 
             form.Email = user.EmailAddress;
+
+            // IMPORTANT: load messages during initialization.
+            await LoadMyMessagesAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Unable to load your account: {ex.Message}";
+            Console.WriteLine($"Initializing messages page failed: {ex}");
+            errorMessage = "Unable to load your account. Please try again.";
         }
         finally
         {
@@ -307,9 +498,10 @@
         if (isSubmitting)
             return;
 
-        if (form.Content.Length > 3000)
+        if (string.IsNullOrWhiteSpace(form.Content) ||
+            form.Content.Length > 3000)
         {
-            errorMessage = "Your message must be 3,000 characters or fewer.";
+            errorMessage = "Your message must be between 5 and 3,000 characters.";
             return;
         }
 
@@ -325,12 +517,13 @@
                 return;
             }
 
+            // Use the authenticated account's email and UID for ownership.
             var message = new MobileMessage
             {
                 MessageId = Guid.NewGuid().ToString(),
                 UserId = user.Uid,
                 UserName = form.UserName.Trim(),
-                Email = form.Email.Trim(),
+                Email = user.EmailAddress.Trim(),
                 Phone = form.Phone.Trim(),
                 Reason = form.Reason,
                 Title = form.Title.Trim(),
@@ -341,13 +534,15 @@
 
             await AuthService.SendMessageAsync(message);
 
-            successMessage =
-                "Thank you for contacting Christian Centre. Your message has been sent to the administration team.";
+            successMessage = "Thank you for contacting Christian Centre. Your message has been sent to the administration team.";
 
             form.Title = string.Empty;
             form.Content = string.Empty;
             form.Reason = string.Empty;
             form.Phone = string.Empty;
+
+            // Refresh the list after successful submission.
+            await LoadMyMessagesAsync();
         }
         catch (Exception ex)
         {
@@ -360,9 +555,114 @@
         }
     }
 
+    private async Task LoadMyMessagesAsync()
+    {
+        // Prevent duplicate calls, but do not use the UI loading flag
+        // as the request guard.
+        if (isFetchingMyMessages)
+            return;
+
+        isFetchingMyMessages = true;
+        isLoadingMyMessages = true;
+        messagesLoadError = string.Empty;
+
+        try
+        {
+            var user = await AuthService.LoadCurrentUserAsync();
+
+            if (user is null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+            // Bound the wait so the UI can show a recoverable error.
+            myMessages = await AuthService.GetMyMessagesAsync()
+                .WaitAsync(TimeSpan.FromSeconds(15));
+
+            myMessages ??= new List<MobileMessage>();
+
+            // Ensure newest messages appear first.
+            myMessages = myMessages
+                .OrderByDescending(message => message.Date)
+                .ToList();
+        }
+        catch (TimeoutException)
+        {
+            messagesLoadError =
+                "Loading your messages timed out. Check your connection and try again.";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Loading member messages failed: {ex}");
+            messagesLoadError =
+                $"Unable to load your messages. Please try again. {ex}";
+        }
+        finally
+        {
+            isLoadingMyMessages = false;
+            isFetchingMyMessages = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OpenMessage(MobileMessage message)
+    {
+        selectedMessage = message;
+    }
+
+    private void CloseMessage()
+    {
+        selectedMessage = null;
+    }
+
+    private void ClearError()
+    {
+        errorMessage = string.Empty;
+    }
+
     private void ClearSuccess()
     {
         successMessage = string.Empty;
+    }
+
+    private static string GetPreview(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "No message content available.";
+
+        const int maxLength = 150;
+
+        return content.Length <= maxLength
+            ? content
+            : content[..maxLength].TrimEnd() + "...";
+    }
+
+    private static string FormatDate(DateTime date)
+    {
+        if (date == default)
+            return "Date unavailable";
+
+        return date.ToLocalTime().ToString("dd MMM yyyy, HH:mm");
+    }
+
+    private static string FormatReason(string? reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return "General enquiry";
+
+        return reason.Trim().ToUpperInvariant() switch
+        {
+            "GENERAL" => "General enquiry",
+            "VISIT" => "Visiting the church",
+            "SERVICES" => "Church services",
+            "OUTREACH" => "Outreach programmes",
+            "VOLUNTEERING" => "Volunteering",
+            "SUPPORT" => "Request for assistance",
+            "OTHER" => "Other",
+            _ => System.Globalization.CultureInfo.CurrentCulture.TextInfo
+                .ToTitleCase(reason.Replace("_", " ").ToLowerInvariant())
+        };
     }
 
     public class MessageForm
