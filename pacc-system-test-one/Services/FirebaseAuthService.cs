@@ -945,6 +945,120 @@ namespace pacc_system_test_one.Services
                 throw;
             }
         }
+
+        public async Task<User?> GetMyProfileAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var profile = await _jsRuntime.InvokeAsync<User?>(
+                    "firebaseAuth.getMyProfile");
+
+                return profile;
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"GetMyProfileAsync failed: {ex.Message}");
+                throw new Exception(
+                    "Unable to retrieve your profile from Firebase.", ex);
+            }
+        }
+
+        public async Task UpdateMyProfileAsync(
+            string firstName,
+            string lastName)
+        {
+            await WaitForFirebaseAsync();
+
+            firstName = firstName?.Trim() ?? string.Empty;
+            lastName = lastName?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName))
+            {
+                throw new ArgumentException(
+                    "First name and last name are required.");
+            }
+
+            if (firstName.Length > 50 || lastName.Length > 50)
+            {
+                throw new ArgumentException(
+                    "Names cannot exceed 50 characters.");
+            }
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync(
+                    "firebaseAuth.updateMyProfile",
+                    firstName,
+                    lastName);
+
+                // Keep the in-memory authenticated user in sync, if available.
+                if (CurrentUser is not null)
+                {
+                    CurrentUser.FirstName = firstName;
+                    CurrentUser.LastName = lastName;
+                }
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"UpdateMyProfileAsync failed: {ex.Message}");
+                throw new Exception(
+                    "Unable to save your profile changes to Firebase.", ex);
+            }
+        }
+        public async Task<List<MobileMessage>> GetMyMessagesAsync()
+        {
+            await WaitForFirebaseAsync();
+
+            try
+            {
+                var messages =
+                    await _jsRuntime.InvokeAsync<List<MobileMessage>>(
+                        "firebaseAuth.getMyMessages");
+
+                return messages ?? new List<MobileMessage>();
+            }
+            catch (JSException ex)
+            {
+                Console.WriteLine($"GetMyMessagesAsync failed: {ex.Message}");
+
+                throw new Exception(
+                    "Unable to retrieve your messages from Firebase.", ex);
+            }
+        }
+
+        
+        public async Task<List<Donation>> GetMyDonationsAsync()
+        {
+            try
+            {
+                await WaitForFirebaseAsync();
+
+                var currentUser = await LoadCurrentUserAsync();
+
+                if (currentUser is null || string.IsNullOrWhiteSpace(currentUser.Uid))
+                {
+                    throw new InvalidOperationException(
+                        "You must be signed in to view your donations.");
+                }
+
+                var donations = await _jsRuntime.InvokeAsync<List<Donation>>(
+                    "firebaseAuth.getMyDonations");
+
+                return donations ?? new List<Donation>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving donations: {ex}");
+
+                throw new Exception(
+                    "Unable to retrieve your donations from Firebase.", ex);
+            }
+        }
+
+
         // =====================================================
         // LOGOUT
         // =====================================================

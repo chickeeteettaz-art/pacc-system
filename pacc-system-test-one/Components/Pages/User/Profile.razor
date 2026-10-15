@@ -1,5 +1,833 @@
-﻿<h3>Profile</h3>
+﻿
+@page "/user/profile"
+
+@using System.ComponentModel.DataAnnotations
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>My Profile | Christian Centre</PageTitle>
+
+<div class="profile-page">
+
+    <div class="profile-breadcrumb">
+        <span>Christian Centre</span>
+        <i class="bi bi-chevron-right"></i>
+        <span>Account</span>
+        <i class="bi bi-chevron-right"></i>
+        <span class="active">My Profile</span>
+    </div>
+
+    <div class="profile-page-heading">
+        <div>
+            <h1>My Profile</h1>
+            <p>View and manage your personal account information.</p>
+        </div>
+
+        <div class="profile-heading-icon">
+            <i class="bi bi-person-circle"></i>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="profile-state">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Loading your profile...</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(loadError))
+    {
+        <div class="alert alert-danger profile-alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @loadError
+
+            <button class="btn btn-outline-danger btn-sm ms-3"
+                    type="button"
+                    @onclick="LoadProfileAsync">
+                Try again
+            </button>
+        </div>
+    }
+    else if (profile is not null)
+    {
+        @if (!string.IsNullOrWhiteSpace(successMessage))
+        {
+            <div class="alert alert-success profile-alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                @successMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(saveError))
+        {
+            <div class="alert alert-danger profile-alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                @saveError
+            </div>
+        }
+
+        <div class="profile-layout">
+
+            <!-- Profile summary -->
+            <section class="profile-summary-card">
+
+                <div class="profile-cover">
+                    <div class="profile-cover-decoration"></div>
+                </div>
+
+                <div class="profile-summary-content">
+
+                    <div class="profile-avatar">
+                        @GetInitials()
+                    </div>
+
+                    <h2>@GetFullName()</h2>
+
+                    <p class="profile-summary-email">
+                        @profile.EmailAddress
+                    </p>
+
+                    <span class="profile-role">
+                        <i class="bi bi-person-check-fill me-1"></i>
+                        @profile.UserType
+                    </span>
+
+                    <div class="profile-summary-divider"></div>
+
+                    <div class="profile-summary-item">
+                        <div class="profile-summary-item-icon">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+
+                        <div>
+                            <span>Email address</span>
+                            <strong>@profile.EmailAddress</strong>
+                        </div>
+                    </div>
+
+                    <div class="profile-summary-item">
+                        <div class="profile-summary-item-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+
+                        <div>
+                            <span>Account type</span>
+                            <strong>@profile.UserType</strong>
+                        </div>
+                    </div>
+
+                    <div class="profile-summary-note">
+                        <i class="bi bi-info-circle"></i>
+                        <span>
+                            Your account role and sign-in email cannot be changed
+                            through this profile form.
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Editable profile -->
+            <section class="profile-form-card">
+
+                <div class="profile-card-heading">
+                    <div>
+                        <h2>Personal Information</h2>
+                        <p>Update the personal details associated with your account.</p>
+                    </div>
+
+                    <div class="profile-section-icon">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                </div>
+
+                <EditForm Model="@editModel" OnValidSubmit="SaveProfileAsync">
+                    <DataAnnotationsValidator />
+
+                    <div class="profile-form-section-title">
+                        <i class="bi bi-person me-2"></i>
+                        Basic information
+                    </div>
+
+                    <div class="row g-3">
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="firstName">
+                                First name
+                            </label>
+
+                            <InputText id="firstName"
+                                       class="form-control profile-input"
+                                       @bind-Value="editModel.FirstName"
+                                       disabled="@isSaving"
+                                       autocomplete="given-name"
+                                       placeholder="Enter your first name" />
+
+                            <ValidationMessage For="@(() => editModel.FirstName)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" for="lastName">
+                                Last name
+                            </label>
+
+                            <InputText id="lastName"
+                                       class="form-control profile-input"
+                                       @bind-Value="editModel.LastName"
+                                       disabled="@isSaving"
+                                       autocomplete="family-name"
+                                       placeholder="Enter your last name" />
+
+                            <ValidationMessage For="@(() => editModel.LastName)" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="emailAddress">
+                                Email address
+                            </label>
+
+                            <div class="profile-readonly-field">
+                                <i class="bi bi-envelope"></i>
+                                <input id="emailAddress"
+                                       class="form-control profile-input"
+                                       value="@profile.EmailAddress"
+                                       readonly
+                                       aria-describedby="emailHelp" />
+                                <i class="bi bi-lock-fill profile-lock-icon"></i>
+                            </div>
+
+                            <div id="emailHelp" class="profile-field-help">
+                                Your email is used to sign in and is managed by Firebase Authentication.
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label" for="accountType">
+                                Account type
+                            </label>
+
+                            <div class="profile-readonly-field">
+                                <i class="bi bi-shield-check"></i>
+                                <input id="accountType"
+                                       class="form-control profile-input"
+                                       value="@profile.UserType"
+                                       readonly />
+                                <i class="bi bi-lock-fill profile-lock-icon"></i>
+                            </div>
+
+                            <div class="profile-field-help">
+                                Account permissions are managed by the church administration.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-form-footer">
+                        <div class="profile-save-note">
+                            <i class="bi bi-shield-lock"></i>
+                            Your account security is protected.
+                        </div>
+
+                        <div class="profile-form-actions">
+                            <button type="button"
+                                    class="btn btn-outline-secondary profile-cancel-button"
+                                    @onclick="CancelChanges"
+                                    disabled="@isSaving">
+                                Cancel
+                            </button>
+
+                            <button type="submit"
+                                    class="btn btn-primary profile-save-button"
+                                    disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"
+                                          role="status"></span>
+                                    <span>Saving...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check2-circle me-2"></i>
+                                    <span>Save changes</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </section>
+        </div>
+    }
+</div>
+
+<style>
+    .profile-page {
+        max-width: 1500px;
+        margin: 0 auto;
+        color: #24364b;
+    }
+
+    .profile-breadcrumb {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 11px;
+        margin-bottom: 24px;
+        color: #8391a5;
+        font-size: .9rem;
+    }
+
+    .profile-breadcrumb i {
+        font-size: .7rem;
+        color: #b4c0ce;
+    }
+
+    .profile-breadcrumb .active {
+        color: #3d5878;
+        font-weight: 600;
+    }
+
+    .profile-page-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .profile-page-heading h1 {
+        margin: 0 0 7px;
+        color: #172b4d;
+        font-size: clamp(1.7rem, 3vw, 2.1rem);
+        font-weight: 750;
+    }
+
+    .profile-page-heading p {
+        margin: 0;
+        color: #7b8ba0;
+        line-height: 1.6;
+    }
+
+    .profile-heading-icon,
+    .profile-section-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: 52px;
+        height: 52px;
+        border-radius: 15px;
+        background: #edf4ff;
+        color: #2563eb;
+        font-size: 1.4rem;
+    }
+
+    .profile-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, .8fr) minmax(0, 1.8fr);
+        align-items: start;
+        gap: 24px;
+    }
+
+    .profile-summary-card,
+    .profile-form-card {
+        overflow: hidden;
+        border: 1px solid #e5ebf2;
+        border-radius: 17px;
+        background: #fff;
+        box-shadow: 0 5px 18px rgba(23, 43, 77, .035);
+    }
+
+    .profile-cover {
+        position: relative;
+        height: 115px;
+        overflow: hidden;
+        background: linear-gradient(120deg, #edf4ff, #f8fbff);
+    }
+
+    .profile-cover-decoration {
+        position: absolute;
+        top: -75px;
+        right: -35px;
+        width: 210px;
+        height: 210px;
+        border: 30px solid rgba(37, 99, 235, .07);
+        border-radius: 50%;
+    }
+
+    .profile-summary-content {
+        padding: 0 24px 24px;
+    }
+
+    .profile-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 86px;
+        height: 86px;
+        margin-top: -43px;
+        margin-bottom: 15px;
+        position: relative;
+        border: 5px solid white;
+        border-radius: 50%;
+        background: #2563eb;
+        color: white;
+        font-size: 1.65rem;
+        font-weight: 750;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, .18);
+    }
+
+    .profile-summary-content h2 {
+        margin-bottom: 6px;
+        color: #172b4d;
+        font-size: 1.25rem;
+        font-weight: 750;
+        overflow-wrap: anywhere;
+    }
+
+    .profile-summary-email {
+        margin-bottom: 13px;
+        color: #8391a5;
+        font-size: .88rem;
+        overflow-wrap: anywhere;
+    }
+
+    .profile-role {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 11px;
+        border-radius: 20px;
+        background: #edf4ff;
+        color: #245ac1;
+        font-size: .8rem;
+        font-weight: 650;
+    }
+
+    .profile-summary-divider {
+        height: 1px;
+        margin: 22px 0;
+        background: #edf1f6;
+    }
+
+    .profile-summary-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .profile-summary-item-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: #f3f6fa;
+        color: #54708f;
+    }
+
+    .profile-summary-item span,
+    .profile-summary-item strong {
+        display: block;
+    }
+
+    .profile-summary-item span {
+        margin-bottom: 4px;
+        color: #8391a5;
+        font-size: .8rem;
+    }
+
+    .profile-summary-item strong {
+        color: #30445e;
+        font-size: .9rem;
+        font-weight: 600;
+        overflow-wrap: anywhere;
+    }
+
+    .profile-summary-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 13px;
+        border-radius: 10px;
+        background: #f5f8fc;
+        color: #72839a;
+        font-size: .81rem;
+        line-height: 1.6;
+    }
+
+    .profile-summary-note i {
+        margin-top: 3px;
+        flex-shrink: 0;
+        color: #2563eb;
+    }
+
+    .profile-form-card {
+        padding: 26px;
+    }
+
+    .profile-card-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 27px;
+        padding-bottom: 22px;
+        border-bottom: 1px solid #edf1f6;
+    }
+
+    .profile-card-heading h2 {
+        margin: 0 0 7px;
+        color: #172b4d;
+        font-size: 1.2rem;
+        font-weight: 750;
+    }
+
+    .profile-card-heading p {
+        margin: 0;
+        color: #8391a5;
+        font-size: .9rem;
+        line-height: 1.6;
+    }
+
+    .profile-section-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        font-size: 1.15rem;
+    }
+
+    .profile-form-section-title {
+        margin-bottom: 19px;
+        color: #30445e;
+        font-size: .95rem;
+        font-weight: 700;
+    }
+
+    .profile-form-section-title i {
+        color: #2563eb;
+    }
+
+    .profile-form-card .form-label {
+        margin-bottom: 8px;
+        color: #3c5069;
+        font-size: .87rem;
+        font-weight: 650;
+    }
+
+    .profile-input {
+        min-height: 46px;
+        border: 1px solid #dfe6ef;
+        border-radius: 10px;
+        background-color: #fff;
+        color: #30445e;
+        box-shadow: none;
+    }
+
+    .profile-input::placeholder {
+        color: #a0adbd;
+    }
+
+    .profile-input:focus {
+        border-color: #8ab0ff;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
+    }
+
+    .profile-readonly-field {
+        position: relative;
+    }
+
+    .profile-readonly-field > i:first-child {
+        position: absolute;
+        top: 50%;
+        left: 14px;
+        z-index: 1;
+        color: #8391a5;
+        transform: translateY(-50%);
+    }
+
+    .profile-readonly-field .profile-input {
+        padding-left: 40px;
+        padding-right: 42px;
+        background: #f8fafc;
+        color: #64748b;
+    }
+
+    .profile-lock-icon {
+        position: absolute;
+        top: 50%;
+        right: 14px;
+        color: #94a3b8;
+        transform: translateY(-50%);
+    }
+
+    .profile-field-help {
+        margin-top: 7px;
+        color: #8996a8;
+        font-size: .78rem;
+        line-height: 1.5;
+    }
+
+    .profile-form-card .validation-message {
+        margin-top: 6px;
+        color: #dc3545;
+        font-size: .8rem;
+    }
+
+    .profile-form-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #edf1f6;
+    }
+
+    .profile-save-note {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8391a5;
+        font-size: .8rem;
+    }
+
+    .profile-save-note i {
+        color: #2563eb;
+    }
+
+    .profile-form-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .profile-cancel-button,
+    .profile-save-button {
+        min-height: 43px;
+        padding: 10px 16px;
+        border-radius: 9px;
+        font-size: .88rem;
+        font-weight: 650;
+    }
+
+    .profile-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        gap: 12px;
+        border: 1px solid #e5ebf2;
+        border-radius: 17px;
+        background: #fff;
+    }
+
+    .profile-state p {
+        margin: 0;
+        color: #8391a5;
+    }
+
+    .profile-alert {
+        border-radius: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    @@media (max-width: 900px) {
+        .profile-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .profile-summary-card {
+            display: grid;
+            grid-template-columns: 150px minmax(0, 1fr);
+        }
+
+        .profile-cover {
+            grid-row: 1;
+            grid-column: 1 / -1;
+        }
+
+        .profile-summary-content {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .profile-form-card {
+            padding: 19px;
+        }
+
+        .profile-summary-content {
+            padding-right: 19px;
+            padding-left: 19px;
+        }
+
+        .profile-form-footer {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .profile-form-actions {
+            width: 100%;
+        }
+
+        .profile-form-actions button {
+            flex: 1;
+        }
+
+        .profile-card-heading {
+            align-items: flex-start;
+        }
+
+        .profile-section-icon {
+            width: 39px;
+            height: 39px;
+        }
+    }
+</style>
 
 @code {
+    private User? profile;
+    private ProfileEditModel editModel = new();
 
+    private bool isLoading = true;
+    private bool isSaving;
+
+    private string loadError = string.Empty;
+    private string saveError = string.Empty;
+    private string successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        loadError = string.Empty;
+        saveError = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var currentUser = await AuthService.LoadCurrentUserAsync();
+
+            if (currentUser is null)
+            {
+                Navigation.NavigateTo("/login", true);
+                return;
+            }
+
+            // Load the Firestore profile, rather than relying only on
+            // values cached when the user originally signed in.
+            profile = await AuthService.GetMyProfileAsync();
+
+            if (profile is null)
+            {
+                loadError = "Your profile could not be found. Please sign in again or contact the church administrator.";
+                return;
+            }
+
+            editModel = new ProfileEditModel
+            {
+                FirstName = profile.FirstName,
+                LastName = profile.LastName
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Loading profile failed: {ex}");
+            loadError = "Your profile could not be loaded. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveProfileAsync()
+    {
+        if (profile is null || isSaving)
+            return;
+
+        isSaving = true;
+        saveError = string.Empty;
+        successMessage = string.Empty;
+
+        try
+        {
+            var firstName = editModel.FirstName.Trim();
+            var lastName = editModel.LastName.Trim();
+
+            await AuthService.UpdateMyProfileAsync(firstName, lastName);
+
+            profile.FirstName = firstName;
+            profile.LastName = lastName;
+
+            successMessage = "Your profile has been updated successfully.";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Saving profile failed: {ex}");
+            saveError = ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CancelChanges()
+    {
+        if (profile is null)
+            return;
+
+        editModel = new ProfileEditModel
+        {
+            FirstName = profile.FirstName,
+            LastName = profile.LastName
+        };
+
+        saveError = string.Empty;
+        successMessage = string.Empty;
+    }
+
+    private string GetFullName()
+    {
+        var name = $"{profile?.FirstName} {profile?.LastName}".Trim();
+
+        return string.IsNullOrWhiteSpace(name) ? "Church Member" : name;
+    }
+
+    private string GetInitials()
+    {
+        var first = string.IsNullOrWhiteSpace(profile?.FirstName)
+            ? ""
+            : profile!.FirstName[..1];
+
+        var last = string.IsNullOrWhiteSpace(profile?.LastName)
+            ? ""
+            : profile!.LastName[..1];
+
+        var initials = $"{first}{last}".ToUpperInvariant();
+
+        return string.IsNullOrWhiteSpace(initials) ? "U" : initials;
+    }
+
+    private sealed class ProfileEditModel
+    {
+        [Required(ErrorMessage = "First name is required.")]
+        [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Last name is required.")]
+        [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters.")]
+        public string LastName { get; set; } = string.Empty;
+    }
 }
+
