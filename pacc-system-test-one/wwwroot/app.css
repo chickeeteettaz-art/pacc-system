@@ -10092,3 +10092,75 @@ textarea.form-control {
     }
 }
 
+
+/* Church branding and logo */
+.login-branding .logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 65px;
+}
+
+.login-branding .logo-icon {
+    width: 76px;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 18px;
+    padding: 8px;
+    overflow: hidden;
+}
+
+.login-branding .church-logo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.login-branding .logo-text h1 {
+    margin: 0 0 7px;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    line-height: 1.3;
+}
+
+.login-branding .logo-text p {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    line-height: 1.6;
+    opacity: 0.85;
+}
+
+/* Responsive logo */
+@media (max-width: 768px) {
+    .login-branding .logo {
+        gap: 12px;
+        margin-bottom: 35px;
+    }
+
+    .login-branding .logo-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
+    }
+
+    .login-branding .logo-text h1 {
+        font-size: 16px;
+    }
+
+    .login-branding .logo-text p {
+        font-size: 9px;
+        letter-spacing: 1px;
+    }
+}
+
+
+
