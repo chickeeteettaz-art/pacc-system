@@ -1,19 +1,24 @@
-﻿namespace pacc_system_test_one.Models
+﻿
+namespace pacc_system_test_one.Models
 {
     public class PrayerRequest
     {
-        public string RequestId { get; set; } = "";
+        public string RequestId { get; set; } = string.Empty;
 
-        public string UserId { get; set; } = "";
+        public string UserId { get; set; } = string.Empty;
 
-        public string Title { get; set; } = "";
+        public string FullName { get; set; } = string.Empty;
 
-        public string Content { get; set; } = "";
+        public string Email { get; set; } = string.Empty;
 
-        public DateTime Date { get; set; }
+        public string Category { get; set; } = string.Empty;
 
-        public string UserName { get; set; } = "";
+        public string Content { get; set; } = string.Empty;
 
         public string Status { get; set; } = "Pending";
+
+        public DateTime Date { get; set; } = DateTime.Now;
+
+        public bool Confidential { get; set; }
     }
 }
