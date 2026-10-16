@@ -1,5 +1,451 @@
-﻿<h3>PrayerRequest</h3>
+﻿@page "/user/prayer-request"
+
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Logging
+@using pacc_system_test_one.Models
+@using pacc_system_test_one.Services
+
+@inject FirebaseAuthService AuthService
+@inject ILogger<PrayerRequest> Logger
+
+<PageTitle>Prayer Request</PageTitle>
+
+<div class="prayer-page">
+
+    @* PAGE HEADER *@
+    <div class="give-header">
+        <div class="give-breadcrumb">
+            Christian Centre
+            <span>/</span>
+            Prayer Request
+        </div>
+
+        <div class="give-header-content">
+            <div class="give-header-icon">
+                <i class="bi bi-heart-fill" aria-hidden="true"></i>
+            </div>
+
+            <div>
+                <h1>Prayer Request</h1>
+                <p>
+                    Share what's on your heart. We're here to pray
+                    with you and support you in faith.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    @* MAIN CONTENT *@
+    <div class="row g-4 prayer-layout">
+
+        @* LEFT INFORMATION CARD *@
+        <div class="col-lg-5">
+            <div class="prayer-info-card">
+
+                <div class="prayer-info-icon">
+                    <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                </div>
+
+                <h2>You're not alone</h2>
+
+                <p class="prayer-info-description">
+                    Whatever you're going through, you don't have
+                    to face it alone. Share your prayer request with
+                    us, and let us stand with you in faith.
+                </p>
+
+                <div class="prayer-benefits">
+
+                    <div class="prayer-benefit">
+                        <div class="prayer-benefit-icon">
+                            <i class="bi bi-heart" aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <strong>We pray with you</strong>
+                            <span>
+                                Let us join you in prayer through
+                                life's challenges and celebrations.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="prayer-benefit">
+                        <div class="prayer-benefit-icon">
+                            <i class="bi bi-shield-check"
+                               aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <strong>Your privacy matters</strong>
+                            <span>
+                                You can ask for your prayer request
+                                to be treated as confidential.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="prayer-benefit">
+                        <div class="prayer-benefit-icon">
+                            <i class="bi bi-sunrise"
+                               aria-hidden="true"></i>
+                        </div>
+                        <div>
+                            <strong>There is always hope</strong>
+                            <span>
+                                No request is too small when it
+                                comes from your heart.
+                            </span>
+                        </div>
+                    </div>
+
+                </div>
+
+                @* SCRIPTURE *@
+                <div class="prayer-scripture">
+                    <i class="bi bi-quote" aria-hidden="true"></i>
+
+                    <p>
+                        "Do not be anxious about anything, but in
+                        every situation, by prayer and petition,
+                        with thanksgiving, present your requests
+                        to God."
+                    </p>
+
+                    <span>Philippians 4:6</span>
+                </div>
+
+            </div>
+        </div>
+
+        @* RIGHT PRAYER FORM CARD *@
+        <div class="col-lg-7">
+            <div class="prayer-card">
+
+                <div class="prayer-card-header">
+                    <div>
+                        <h2>Your Prayer Request</h2>
+                        <p>
+                            Complete the form below to share
+                            what's on your heart.
+                        </p>
+                    </div>
+
+                    <div class="prayer-card-icon">
+                        <i class="bi bi-chat-heart-fill"
+                           aria-hidden="true"></i>
+                    </div>
+                </div>
+
+                @* SUCCESS MESSAGE *@
+                @if (!string.IsNullOrWhiteSpace(successMessage))
+                {
+                    <div class="give-alert give-alert-success"
+                         role="status">
+                        <div class="give-alert-icon">
+                            <i class="bi bi-check-circle-fill"
+                               aria-hidden="true"></i>
+                        </div>
+
+                        <div>
+                            <strong>Request submitted successfully</strong>
+                            <p>@successMessage</p>
+                        </div>
+                    </div>
+                }
+
+                @* ERROR MESSAGE *@
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="give-alert give-alert-danger"
+                         role="alert">
+                        <div class="give-alert-icon">
+                            <i class="bi bi-exclamation-triangle-fill"
+                               aria-hidden="true"></i>
+                        </div>
+
+                        <div class="prayer-alert-content">
+                            <strong>Unable to submit request</strong>
+                            <p>@errorMessage</p>
+                        </div>
+
+                        <button type="button"
+                                class="give-alert-close"
+                                aria-label="Dismiss error message"
+                                @onclick="ClearError">
+                            <i class="bi bi-x-lg"
+                               aria-hidden="true"></i>
+                        </button>
+                    </div>
+                }
+
+                <div class="prayer-form-intro">
+                    <p>
+                        Fields marked with an asterisk (*)
+                        are required.
+                    </p>
+                </div>
+
+                <EditForm @key="formKey"
+                          Model="@request"
+                          OnSubmit="@HandleSubmit">
+
+                    <DataAnnotationsValidator />
+
+                    @* FULL NAME *@
+                    <div class="prayer-form-section">
+                        <label for="fullName" class="prayer-label">
+                            Full Name <span>*</span>
+                        </label>
+
+                        <InputText id="fullName"
+                                   class="form-control prayer-input"
+                                   @bind-Value="request.FullName"
+                                   placeholder="Enter your full name"
+                                   autocomplete="name"
+                                   disabled="@isSubmitting" />
+
+                        @if (submitted &&
+                             string.IsNullOrWhiteSpace(request.FullName))
+                        {
+                            <span class="prayer-field-error">
+                                Please enter your full name.
+                            </span>
+                        }
+                    </div>
+
+                    @* EMAIL *@
+                    <div class="prayer-form-section">
+                        <label for="email" class="prayer-label">
+                            Email Address <span>*</span>
+                        </label>
+
+                        <InputText id="email"
+                                   class="form-control prayer-input"
+                                   type="email"
+                                   @bind-Value="request.Email"
+                                   placeholder="Enter your email address"
+                                   autocomplete="email"
+                                   disabled="@isSubmitting" />
+
+                        @if (submitted && !IsValidEmail(request.Email))
+                        {
+                            <span class="prayer-field-error">
+                                Please enter a valid email address.
+                            </span>
+                        }
+                    </div>
+
+                    @* PRAYER CATEGORY *@
+                    <div class="prayer-form-section">
+                        <label for="category" class="prayer-label">
+                            Prayer Category <span>*</span>
+                        </label>
+
+                        <InputSelect id="category"
+                                     class="form-select prayer-input"
+                                     @bind-Value="request.Category"
+                                     disabled="@isSubmitting">
+
+                            <option value="">Select a prayer category</option>
+                            <option value="Healing">Healing</option>
+                            <option value="Family">Family</option>
+                            <option value="Financial">Financial</option>
+                            <option value="Spiritual Growth">Spiritual Growth</option>
+                            <option value="Guidance">Guidance</option>
+                            <option value="Thanksgiving">Thanksgiving</option>
+                            <option value="Other">Other</option>
+                        </InputSelect>
+
+                        @if (submitted &&
+                             string.IsNullOrWhiteSpace(request.Category))
+                        {
+                            <span class="prayer-field-error">
+                                Please select a prayer category.
+                            </span>
+                        }
+                    </div>
+
+                    @* PRAYER MESSAGE *@
+                    <div class="prayer-form-section">
+                        <label for="content" class="prayer-label">
+                            Your Prayer Request <span>*</span>
+                        </label>
+
+                        <InputTextArea id="content"
+                                       class="form-control prayer-input prayer-textarea"
+                                       @bind-Value="request.Content"
+                                       placeholder="Share your prayer request here..."
+                                       rows="6"
+                                       disabled="@isSubmitting" />
+
+                        @if (submitted &&
+                             string.IsNullOrWhiteSpace(request.Content))
+                        {
+                            <span class="prayer-field-error">
+                                Please enter your prayer request.
+                            </span>
+                        }
+
+                        <div class="prayer-form-help">
+                            <i class="bi bi-info-circle"
+                               aria-hidden="true"></i>
+                            <span>
+                                Share only the details you're comfortable
+                                sharing.
+                            </span>
+                        </div>
+                    </div>
+
+                    @* CONFIDENTIALITY OPTION *@
+                    <div class="prayer-confidential-option">
+                        <InputCheckbox id="confidential"
+                                       class="prayer-checkbox"
+                                       @bind-Value="request.Confidential"
+                                       disabled="@isSubmitting" />
+
+                        <label for="confidential">
+                            <strong>
+                                Keep my prayer request confidential
+                            </strong>
+                            <span>
+                                Please treat my request as confidential.
+                            </span>
+                        </label>
+                    </div>
+
+                    @* PRIVACY NOTICE *@
+                    <div class="prayer-privacy-note">
+                        <i class="bi bi-shield-lock"
+                           aria-hidden="true"></i>
+                        <span>
+                            Please avoid sharing passwords or other
+                            sensitive personal information.
+                        </span>
+                    </div>
+
+                    @* SUBMIT BUTTON *@
+                    <button type="submit"
+                            class="btn prayer-submit-button"
+                            disabled="@isSubmitting">
+
+                        @if (isSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"
+                                  role="status"
+                                  aria-hidden="true"></span>
+
+                            <span>Submitting Request...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-heart-fill me-2"
+                               aria-hidden="true"></i>
+
+                            <span>Submit Prayer Request</span>
+                        }
+                    </button>
+
+                </EditForm>
+
+                @* BOTTOM MESSAGE *@
+                <div class="prayer-bottom-note">
+                    <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                    <span>
+                        You are not alone. Your request matters to us.
+                    </span>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
 
 @code {
+    private pacc_system_test_one.Models.PrayerRequest request = new();
 
+    private bool submitted;
+    private bool isSubmitting;
+
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    // Used to reset the EditForm when a request is successfully saved.
+    private int formKey;
+
+    private async Task HandleSubmit(EditContext editContext)
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        submitted = true;
+        successMessage = string.Empty;
+        errorMessage = string.Empty;
+
+        // Validate the required fields before contacting Firebase.
+        if (string.IsNullOrWhiteSpace(request.FullName) ||
+            !IsValidEmail(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Category) ||
+            string.IsNullOrWhiteSpace(request.Content))
+        {
+            errorMessage = "Please correct the highlighted fields.";
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            // Keep the existing Firebase save method.
+            await AuthService.CreatePrayerRequestAsync(request);
+
+            successMessage =
+                "Your prayer request has been submitted successfully. Thank you for sharing.";
+
+            // Reset the form only after the save succeeds.
+            request = new pacc_system_test_one.Models.PrayerRequest();
+            submitted = false;
+            formKey++;
+        }
+        catch (Exception ex)
+        {
+            // Keep technical details out of the user-facing message.
+            Logger.LogError(ex, "Failed to submit a prayer request.");
+
+            errorMessage =
+                "We couldn't submit your prayer request. Please check your connection and try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private static bool IsValidEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
+        try
+        {
+            var address = new System.Net.Mail.MailAddress(email.Trim());
+
+            return string.Equals(
+                address.Address,
+                email.Trim(),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
+    private void ClearError()
+    {
+        errorMessage = string.Empty;
+    }
 }

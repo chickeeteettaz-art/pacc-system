@@ -2180,74 +2180,57 @@ window.firebaseAuth.createPrayerRequest = async function (
 };
 
 
-/*
- * USER:
- * Get only the currently logged-in user's
- * prayer requests.
- */
-window.firebaseAuth.getMyPrayerRequests = async function () {
 
-    if (!auth.currentUser) {
+/* =========================================================
+   PRAYER REQUESTS
+   ========================================================= */
+
+// Create a prayer request
+window.firebaseAuth.createPrayerRequest = async function (request) {
+    const user = auth.currentUser;
+
+    if (!user) {
         throw new Error("You must be logged in.");
     }
 
-    const currentUser = auth.currentUser;
+    if (!request) {
+        throw new Error("Prayer request details are required.");
+    }
 
-    const snapshot = await getDocs(
-        collection(db, "prayerRequests")
+    const fullName = String(request.fullName || "").trim();
+    const email = String(request.email || "").trim();
+    const category = String(request.category || "").trim();
+    const content = String(request.content || "").trim();
+
+    if (!fullName || !email || !category || !content) {
+        throw new Error("Please complete all required fields.");
+    }
+
+    const requestData = {
+        userId: user.uid,
+        fullName: fullName,
+        email: email,
+        category: category,
+        content: content,
+        status: "Pending",
+        date: Timestamp.now(),
+        confidential: request.confidential === true
+    };
+
+    const documentReference = await addDoc(
+        collection(db, "prayerRequests"),
+        requestData
     );
 
-    const requests = [];
-
-    snapshot.forEach((documentSnapshot) => {
-
-        const data = documentSnapshot.data();
-
-        /*
-         * Only return this user's requests.
-         */
-        if (data.userId !== currentUser.uid) {
-            return;
-        }
-
-        requests.push({
-
-            requestId: documentSnapshot.id,
-
-            userId: data.userId || "",
-
-            title: data.title || "",
-
-            content: data.content || "",
-
-            date: data.date
-                ? data.date.toDate().toISOString()
-                : new Date().toISOString(),
-
-            userName: data.userName || "",
-
-            status: data.status || "Pending"
-        });
-    });
-
-    /*
-     * Newest first.
-     */
-    requests.sort(
-        (a, b) =>
-            new Date(b.date) - new Date(a.date)
-    );
-
-    return requests;
+    return {
+        success: true,
+        requestId: documentReference.id
+    };
 };
 
 
-/*
- * ADMIN:
- * Get all prayer requests.
- */
+// Get all prayer requests for the admin page
 window.firebaseAuth.getPrayerRequests = async function () {
-
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
@@ -2256,59 +2239,76 @@ window.firebaseAuth.getPrayerRequests = async function () {
         collection(db, "prayerRequests")
     );
 
-    const requests = [];
+    const requests = snapshot.docs.map((item) => {
+        const data = item.data();
 
-    snapshot.forEach((documentSnapshot) => {
-
-        const data = documentSnapshot.data();
-
-        requests.push({
-
-            requestId: documentSnapshot.id,
-
+        return {
+            requestId: item.id,
             userId: data.userId || "",
-
-            title: data.title || "",
-
+            fullName: data.fullName || "",
+            email: data.email || "",
+            category: data.category || "",
             content: data.content || "",
-
-            date: data.date
+            status: data.status || "Pending",
+            date: data.date?.toDate
                 ? data.date.toDate().toISOString()
                 : new Date().toISOString(),
-
-            userName: data.userName || "Unknown User",
-
-            status: data.status || "Pending"
-        });
+            confidential: data.confidential === true
+        };
     });
 
     requests.sort(
-        (a, b) =>
-            new Date(b.date) - new Date(a.date)
+        (a, b) => new Date(b.date) - new Date(a.date)
     );
 
     return requests;
 };
 
 
-/*
- * ADMIN:
- * Update the status of a prayer request.
- */
+// Get only the current user's prayer requests
+window.firebaseAuth.getMyPrayerRequests = async function () {
+    if (!auth.currentUser) {
+        throw new Error("You must be logged in.");
+    }
+
+    const snapshot = await getDocs(
+        collection(db, "prayerRequests")
+    );
+
+    return snapshot.docs
+        .filter(item => item.data().userId === auth.currentUser.uid)
+        .map(item => {
+            const data = item.data();
+
+            return {
+                requestId: item.id,
+                userId: data.userId || "",
+                fullName: data.fullName || "",
+                email: data.email || "",
+                category: data.category || "",
+                content: data.content || "",
+                status: data.status || "Pending",
+                date: data.date?.toDate
+                    ? data.date.toDate().toISOString()
+                    : new Date().toISOString(),
+                confidential: data.confidential === true
+            };
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+};
+
+
+// Update a prayer request's status
 window.firebaseAuth.updatePrayerRequestStatus = async function (
     requestId,
     status
 ) {
-
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
 
     const validStatuses = [
-        "Pending",
-        "Approved",
-        "Answered",
-        "Rejected"
+        "Pending", "Approved", "Answered", "Rejected"
     ];
 
     if (!validStatuses.includes(status)) {
@@ -2319,14 +2319,8 @@ window.firebaseAuth.updatePrayerRequestStatus = async function (
         throw new Error("Prayer request ID is required.");
     }
 
-    const requestRef = doc(
-        db,
-        "prayerRequests",
-        requestId
-    );
-
     await updateDoc(
-        requestRef,
+        doc(db, "prayerRequests", requestId),
         {
             status: status,
             updatedAt: Timestamp.now()
@@ -2337,14 +2331,8 @@ window.firebaseAuth.updatePrayerRequestStatus = async function (
 };
 
 
-/*
- * ADMIN:
- * Delete a prayer request.
- */
-window.firebaseAuth.deletePrayerRequest = async function (
-    requestId
-) {
-
+// Delete a prayer request
+window.firebaseAuth.deletePrayerRequest = async function (requestId) {
     if (!auth.currentUser) {
         throw new Error("You must be logged in.");
     }
@@ -2354,15 +2342,12 @@ window.firebaseAuth.deletePrayerRequest = async function (
     }
 
     await deleteDoc(
-        doc(
-            db,
-            "prayerRequests",
-            requestId
-        )
+        doc(db, "prayerRequests", requestId)
     );
 
     return true;
 };
+
 
 window.firebaseAuth.getDashboardStats = async function () {
 

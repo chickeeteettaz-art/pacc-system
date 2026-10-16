@@ -1,4 +1,5 @@
-﻿@page "/admin/prayer-requests"
+﻿
+@page "/admin/prayer-requests"
 @layout AdminLayout
 
 @using Microsoft.JSInterop
@@ -8,11 +9,12 @@
 @inject FirebaseAuthService AuthService
 @inject IJSRuntime JS
 
+<PageTitle>Prayer Requests</PageTitle>
+
 <div class="prayer-admin-page">
 
     <!-- HEADER -->
     <div class="prayer-page-header">
-
         <div class="prayer-header-content">
 
             <div class="breadcrumb">
@@ -22,143 +24,106 @@
             </div>
 
             <div class="title-row">
-
                 <div class="title-icon">
                     <i class="bi bi-heart"></i>
                 </div>
 
                 <div>
                     <h1>Prayer Requests</h1>
-
                     <p>
-                        Review and manage prayer requests
-                        submitted by members.
+                        Review and manage prayer requests submitted by members.
                     </p>
                 </div>
-
             </div>
 
         </div>
-
     </div>
 
-
-    <!-- ERROR -->
+    <!-- ERROR MESSAGE -->
     @if (!string.IsNullOrWhiteSpace(ErrorMessage))
     {
-        <div class="prayer-alert prayer-alert-danger">
-
+        <div class="prayer-alert prayer-alert-danger" role="alert">
             <i class="bi bi-exclamation-triangle-fill"></i>
-
             <span>@ErrorMessage</span>
 
             <button type="button"
                     class="alert-close"
+                    aria-label="Close error"
                     @onclick="ClearError">
                 <i class="bi bi-x-lg"></i>
             </button>
-
         </div>
     }
 
-
-    <!-- SUCCESS -->
+    <!-- SUCCESS MESSAGE -->
     @if (!string.IsNullOrWhiteSpace(SuccessMessage))
     {
-        <div class="prayer-alert prayer-alert-success">
-
+        <div class="prayer-alert prayer-alert-success" role="status">
             <i class="bi bi-check-circle-fill"></i>
-
             <span>@SuccessMessage</span>
 
             <button type="button"
                     class="alert-close"
+                    aria-label="Close message"
                     @onclick="ClearSuccess">
                 <i class="bi bi-x-lg"></i>
             </button>
-
         </div>
     }
-
 
     <!-- STATISTICS -->
     <div class="prayer-stat-grid">
 
         <div class="prayer-stat-card">
-
             <div class="stat-icon blue">
                 <i class="bi bi-inbox"></i>
             </div>
 
             <div class="stat-content">
-
                 <span>Total Requests</span>
-
                 <strong>@PrayerRequests.Count</strong>
-
             </div>
-
         </div>
 
-
         <div class="prayer-stat-card">
-
             <div class="stat-icon orange">
                 <i class="bi bi-clock"></i>
             </div>
 
             <div class="stat-content">
-
                 <span>Pending</span>
-
                 <strong>@PendingCount</strong>
-
             </div>
-
         </div>
 
-
         <div class="prayer-stat-card">
-
             <div class="stat-icon green">
                 <i class="bi bi-check-circle"></i>
             </div>
 
             <div class="stat-content">
-
                 <span>Answered</span>
-
                 <strong>@AnsweredCount</strong>
-
             </div>
-
         </div>
 
-
         <div class="prayer-stat-card">
-
             <div class="stat-icon red">
                 <i class="bi bi-x-circle"></i>
             </div>
 
             <div class="stat-content">
-
                 <span>Rejected</span>
-
                 <strong>@RejectedCount</strong>
-
             </div>
-
         </div>
 
     </div>
-
 
     <!-- TOOLBAR -->
     <div class="prayer-toolbar">
 
         <div class="search-wrapper">
-
             <i class="bi bi-search"></i>
 
             <input type="text"
@@ -171,45 +136,24 @@
             {
                 <button type="button"
                         class="clear-search"
+                        aria-label="Clear search"
                         @onclick="ClearSearch">
                     <i class="bi bi-x"></i>
                 </button>
             }
-
         </div>
-
 
         <div class="filter-wrapper">
-
             <i class="bi bi-funnel"></i>
 
-            <select class="filter-select"
-                    @bind="SelectedStatus">
-
-                <option value="All">
-                    All Statuses
-                </option>
-
-                <option value="Pending">
-                    Pending
-                </option>
-
-                <option value="Approved">
-                    Approved
-                </option>
-
-                <option value="Answered">
-                    Answered
-                </option>
-
-                <option value="Rejected">
-                    Rejected
-                </option>
-
+            <select class="filter-select" @bind="SelectedStatus">
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Answered">Answered</option>
+                <option value="Rejected">Rejected</option>
             </select>
-
         </div>
-
 
         <button type="button"
                 class="refresh-button"
@@ -217,29 +161,25 @@
                 disabled="@IsLoading">
 
             <i class="bi bi-arrow-clockwise @(IsLoading ? "spin" : "")"></i>
-
             Refresh
-
         </button>
 
     </div>
-
 
     <!-- LOADING -->
     @if (IsLoading)
     {
         <div class="prayer-loading">
-
-            <div class="spinner-border"></div>
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
 
             <p>Loading prayer requests...</p>
-
         </div>
     }
-
-    <!-- EMPTY -->
-    @if (!FilteredPrayerRequests.Any())
+    else if (!FilteredPrayerRequests.Any())
     {
+        <!-- EMPTY STATE -->
         <div class="prayer-empty">
 
             <div class="empty-icon">
@@ -270,40 +210,32 @@
 
         </div>
     }
-
-    <!-- REQUEST LIST -->
-    @if (FilteredPrayerRequests.Any())
+    else
     {
+        <!-- REQUEST LIST -->
         <div class="prayer-request-list">
 
             @foreach (var request in FilteredPrayerRequests)
             {
-                <div class="prayer-request-card">
+                <div class="prayer-request-card" @key="request.RequestId">
 
                     <!-- CARD HEADER -->
                     <div class="request-card-header">
 
                         <div class="request-user">
-
                             <div class="user-avatar">
-                                @GetInitials(request.UserName)
+                                @GetInitials(request.FullName)
                             </div>
 
                             <div class="user-details">
-
-                                <strong>
-                                    @request.UserName
-                                </strong>
+                                <strong>@request.FullName</strong>
 
                                 <span>
                                     <i class="bi bi-calendar3"></i>
                                     @request.Date.ToString("dd MMM yyyy, HH:mm")
                                 </span>
-
                             </div>
-
                         </div>
-
 
                         <div class="request-actions">
 
@@ -312,58 +244,49 @@
                             </span>
 
                             <div class="dropdown">
-
                                 <button class="action-button"
                                         type="button"
-                                        data-bs-toggle="dropdown">
+                                        data-bs-toggle="dropdown"
+                                        aria-label="Prayer request actions">
 
                                     <i class="bi bi-three-dots-vertical"></i>
-
                                 </button>
 
                                 <ul class="dropdown-menu dropdown-menu-end">
 
                                     <li>
                                         <button class="dropdown-item"
+                                                type="button"
                                                 @onclick='() => SetStatusAsync(request, "Approved")'>
-
                                             <i class="bi bi-check-circle me-2"></i>
-
                                             Approve
-
                                         </button>
                                     </li>
 
                                     <li>
                                         <button class="dropdown-item"
+                                                type="button"
                                                 @onclick='() => SetStatusAsync(request, "Answered")'>
-
                                             <i class="bi bi-check2-all me-2"></i>
-
                                             Mark Answered
-
                                         </button>
                                     </li>
 
                                     <li>
                                         <button class="dropdown-item"
+                                                type="button"
                                                 @onclick='() => SetStatusAsync(request, "Pending")'>
-
                                             <i class="bi bi-clock me-2"></i>
-
                                             Mark Pending
-
                                         </button>
                                     </li>
 
                                     <li>
                                         <button class="dropdown-item"
+                                                type="button"
                                                 @onclick='() => SetStatusAsync(request, "Rejected")'>
-
                                             <i class="bi bi-x-circle me-2"></i>
-
                                             Reject
-
                                         </button>
                                     </li>
 
@@ -373,79 +296,76 @@
 
                                     <li>
                                         <button class="dropdown-item text-danger"
+                                                type="button"
                                                 @onclick="() => DeleteRequestAsync(request)">
-
                                             <i class="bi bi-trash me-2"></i>
-
                                             Delete
-
                                         </button>
                                     </li>
 
                                 </ul>
-
                             </div>
-
                         </div>
-
                     </div>
 
-
-                    <!-- TITLE -->
+                    <!-- REQUEST DETAILS -->
                     <div class="request-content">
 
-                        <h3>
-                            @request.Title
-                        </h3>
+                        <div class="request-category">
+                            <i class="bi bi-bookmark"></i>
+                            <span>@request.Category</span>
+                        </div>
 
-                        <p>
+                        <h3>@request.Category Prayer Request</h3>
+
+                        <p class="request-message">
                             @request.Content
                         </p>
 
                     </div>
 
-
-                    <!-- FOOTER -->
+                    <!-- REQUEST FOOTER -->
                     <div class="request-card-footer">
 
                         <div class="request-meta">
-
                             <span>
                                 <i class="bi bi-person"></i>
-                                @request.UserName
+                                @request.FullName
                             </span>
 
+                            @if (!string.IsNullOrWhiteSpace(request.Email))
+                            {
+                                <span>
+                                    <i class="bi bi-envelope"></i>
+                                    @request.Email
+                                </span>
+                            }
+
+                            @if (request.Confidential)
+                            {
+                                <span class="confidential-label">
+                                    <i class="bi bi-lock-fill"></i>
+                                    Confidential
+                                </span>
+                            }
                         </div>
 
-
                         <div class="status-control">
-
-                            <label>
+                            <label for="@($"status-{request.RequestId}")">
                                 Status
                             </label>
 
-                            <select class="status-select @GetSelectStatusClass(request.Status)"
+                            <select id="@($"status-{request.RequestId}")"
+                                    class="status-select @GetSelectStatusClass(request.Status)"
                                     value="@request.Status"
                                     @onchange="async e => await StatusChangedAsync(request, e.Value?.ToString())">
 
-                                <option value="Pending">
-                                    Pending
-                                </option>
-
-                                <option value="Approved">
-                                    Approved
-                                </option>
-
-                                <option value="Answered">
-                                    Answered
-                                </option>
-
-                                <option value="Rejected">
-                                    Rejected
-                                </option>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Answered">Answered</option>
+                                <option value="Rejected">Rejected</option>
 
                             </select>
-
                         </div>
 
                     </div>
@@ -458,109 +378,80 @@
 
 </div>
 
-
 @code {
-
-    private List<PrayerRequest> PrayerRequests =
-        new();
+    private List<PrayerRequest> PrayerRequests = new();
 
     private bool IsLoading;
 
-    private string SearchTerm = "";
-
+    private string SearchTerm = string.Empty;
     private string SelectedStatus = "All";
 
-    private string ErrorMessage = "";
-
-    private string SuccessMessage = "";
-
+    private string ErrorMessage = string.Empty;
+    private string SuccessMessage = string.Empty;
 
     private IEnumerable<PrayerRequest> FilteredPrayerRequests
     {
         get
         {
-            IEnumerable<PrayerRequest> result =
-                PrayerRequests;
+            IEnumerable<PrayerRequest> result = PrayerRequests;
 
-            if (!string.IsNullOrWhiteSpace(SelectedStatus)
-                && SelectedStatus != "All")
+            if (!string.IsNullOrWhiteSpace(SelectedStatus) &&
+                SelectedStatus != "All")
             {
-                result = result.Where(
-                    request =>
-                        request.Status.Equals(
-                            SelectedStatus,
-                            StringComparison.OrdinalIgnoreCase));
+                result = result.Where(request =>
+                    string.Equals(
+                        request.Status,
+                        SelectedStatus,
+                        StringComparison.OrdinalIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(SearchTerm))
             {
-                var search =
-                    SearchTerm.Trim();
+                string search = SearchTerm.Trim();
 
-                result = result.Where(
-                    request =>
-                        request.Title.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase)
-                        ||
-                        request.Content.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase)
-                        ||
-                        request.UserName.Contains(
-                            search,
-                            StringComparison.OrdinalIgnoreCase));
+                result = result.Where(request =>
+                    ContainsText(request.FullName, search) ||
+                    ContainsText(request.Email, search) ||
+                    ContainsText(request.Category, search) ||
+                    ContainsText(request.Content, search) ||
+                    ContainsText(request.Status, search));
             }
 
-            return result
-                .OrderByDescending(request => request.Date);
+            return result.OrderByDescending(request => request.Date);
         }
     }
 
-
     private int PendingCount =>
-        PrayerRequests.Count(
-            request =>
-                request.Status.Equals(
-                    "Pending",
-                    StringComparison.OrdinalIgnoreCase));
-
+        PrayerRequests.Count(request =>
+            string.Equals(request.Status, "Pending",
+                StringComparison.OrdinalIgnoreCase));
 
     private int AnsweredCount =>
-        PrayerRequests.Count(
-            request =>
-                request.Status.Equals(
-                    "Answered",
-                    StringComparison.OrdinalIgnoreCase));
-
+        PrayerRequests.Count(request =>
+            string.Equals(request.Status, "Answered",
+                StringComparison.OrdinalIgnoreCase));
 
     private int RejectedCount =>
-        PrayerRequests.Count(
-            request =>
-                request.Status.Equals(
-                    "Rejected",
-                    StringComparison.OrdinalIgnoreCase));
-
+        PrayerRequests.Count(request =>
+            string.Equals(request.Status, "Rejected",
+                StringComparison.OrdinalIgnoreCase));
 
     protected override async Task OnInitializedAsync()
     {
         await LoadPrayerRequestsAsync();
     }
 
-
     private async Task LoadPrayerRequestsAsync()
     {
         try
         {
             IsLoading = true;
+            ErrorMessage = string.Empty;
+            SuccessMessage = string.Empty;
 
-            ErrorMessage = "";
+            var requests = await AuthService.GetPrayerRequestsAsync();
 
-            var requests =
-                await AuthService.GetPrayerRequestsAsync();
-
-            PrayerRequests =
-                requests ?? new List<PrayerRequest>();
+            PrayerRequests = requests?.ToList() ?? new List<PrayerRequest>();
         }
         catch (Exception ex)
         {
@@ -573,7 +464,6 @@
         }
     }
 
-
     private async Task StatusChangedAsync(
         PrayerRequest request,
         string? newStatus)
@@ -581,67 +471,64 @@
         if (string.IsNullOrWhiteSpace(newStatus))
             return;
 
-        if (request.Status.Equals(
-            newStatus,
+        if (string.Equals(request.Status, newStatus,
             StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
-        await SetStatusAsync(
-            request,
-            newStatus);
+        await SetStatusAsync(request, newStatus);
     }
-
 
     private async Task SetStatusAsync(
         PrayerRequest request,
         string status)
     {
+        string previousStatus = request.Status;
+
         try
         {
-            ErrorMessage = "";
+            ErrorMessage = string.Empty;
+            SuccessMessage = string.Empty;
 
             await AuthService.UpdatePrayerRequestStatusAsync(
-                request.RequestId,
-                status);
+     request.RequestId,
+     status);
 
             request.Status = status;
 
             SuccessMessage =
                 $"Prayer request marked as {status.ToLowerInvariant()}.";
-
         }
         catch (Exception ex)
         {
+            request.Status = previousStatus;
+
             ErrorMessage =
                 $"Unable to update prayer request: {GetErrorMessage(ex)}";
         }
     }
 
-
-    private async Task DeleteRequestAsync(
-        PrayerRequest request)
+    private async Task DeleteRequestAsync(PrayerRequest request)
     {
         try
         {
-            var confirmed =
-                await JS.InvokeAsync<bool>(
-                    "confirm",
-                    $"Are you sure you want to delete the prayer request \"{request.Title}\"?");
+            bool confirmed = await JS.InvokeAsync<bool>(
+                "confirm",
+                $"Are you sure you want to delete the prayer request from {request.FullName}?");
 
             if (!confirmed)
                 return;
 
-            ErrorMessage = "";
+            ErrorMessage = string.Empty;
+            SuccessMessage = string.Empty;
 
             await AuthService.DeletePrayerRequestAsync(
-                request.RequestId);
+    request.RequestId);
 
             PrayerRequests.Remove(request);
 
-            SuccessMessage =
-                "Prayer request deleted successfully.";
+            SuccessMessage = "Prayer request deleted successfully.";
         }
         catch (Exception ex)
         {
@@ -650,89 +537,68 @@
         }
     }
 
+    private bool ContainsText(string? source, string search)
+    {
+        return !string.IsNullOrEmpty(source) &&
+               source.Contains(
+                   search,
+                   StringComparison.OrdinalIgnoreCase);
+    }
 
     private void ClearSearch()
     {
-        SearchTerm = "";
+        SearchTerm = string.Empty;
     }
-
 
     private void ClearError()
     {
-        ErrorMessage = "";
+        ErrorMessage = string.Empty;
     }
-
 
     private void ClearSuccess()
     {
-        SuccessMessage = "";
+        SuccessMessage = string.Empty;
     }
 
-
-    private string GetInitials(string name)
+    private static string GetInitials(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
             return "U";
 
-        var parts =
-            name.Split(
-                ' ',
-                StringSplitOptions.RemoveEmptyEntries);
+        string[] parts = name.Split(
+            ' ',
+            StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length == 1)
-            return parts[0][0].ToString().ToUpper();
+            return parts[0][0].ToString().ToUpperInvariant();
 
-        return $"{parts[0][0]}{parts[^1][0]}"
-            .ToUpper();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
     }
 
-
-    private string GetStatusClass(string status)
+    private static string GetStatusClass(string? status)
     {
-        return status.ToLowerInvariant() switch
+        return status?.ToLowerInvariant() switch
         {
-            "approved" =>
-                "status-badge status-approved",
-
-            "answered" =>
-                "status-badge status-answered",
-
-            "rejected" =>
-                "status-badge status-rejected",
-
-            _ =>
-                "status-badge status-pending"
+            "approved" => "status-badge status-approved",
+            "answered" => "status-badge status-answered",
+            "rejected" => "status-badge status-rejected",
+            _ => "status-badge status-pending"
         };
     }
 
-
-    private string GetSelectStatusClass(string status)
+    private static string GetSelectStatusClass(string? status)
     {
-        return status.ToLowerInvariant() switch
+        return status?.ToLowerInvariant() switch
         {
-            "approved" =>
-                "select-approved",
-
-            "answered" =>
-                "select-answered",
-
-            "rejected" =>
-                "select-rejected",
-
-            _ =>
-                "select-pending"
+            "approved" => "select-approved",
+            "answered" => "select-answered",
+            "rejected" => "select-rejected",
+            _ => "select-pending"
         };
     }
 
-
-    private string GetErrorMessage(Exception ex)
+    private static string GetErrorMessage(Exception ex)
     {
-        if (ex is JSException jsException)
-        {
-            return jsException.Message;
-        }
-
         return ex.Message;
     }
-
 }

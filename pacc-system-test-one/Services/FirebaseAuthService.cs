@@ -863,27 +863,56 @@ namespace pacc_system_test_one.Services
         }
 
 
-        public async Task CreatePrayerRequestAsync(
-            string title,
-            string content)
+
+
+        public class PrayerRequestResult
+        {
+            public bool Success { get; set; }
+            public string? RequestId { get; set; }
+            public string? Message { get; set; }
+        }
+
+        public async Task<string> CreatePrayerRequestAsync(
+            PrayerRequest request)
         {
             await WaitForFirebaseAsync();
 
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            if (CurrentUser == null)
+                throw new InvalidOperationException(
+                    "You must be logged in to submit a prayer request.");
+
+            request.UserId = CurrentUser.Uid;
+            request.Status = "Pending";
+            request.Date = DateTime.Now;
+
             try
             {
-                await _jsRuntime.InvokeVoidAsync(
-                    "firebaseAuth.createPrayerRequest",
-                    title,
-                    content);
+                var result =
+                    await _jsRuntime.InvokeAsync<PrayerRequestResult>(
+                        "firebaseAuth.createPrayerRequest",
+                        request);
+
+                if (result == null || !result.Success)
+                {
+                    throw new InvalidOperationException(
+                        result?.Message ??
+                        "Unable to save the prayer request.");
+                }
+
+                return result.RequestId ?? string.Empty;
             }
             catch (JSException ex)
             {
                 Console.WriteLine(
-                    $"Firebase createPrayerRequest error: {ex.Message}");
-
+                    $"Firebase prayer request error: {ex.Message}");
                 throw;
             }
         }
+
+
 
 
         public async Task UpdatePrayerRequestStatusAsync(
