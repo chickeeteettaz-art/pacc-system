@@ -1,23 +1,23 @@
-﻿<div class="user-navigation">
+﻿@* ==========================================
+   USER NAVIGATION
+   ========================================== *@
 
-    <!-- ==========================================
-         BRAND
-         ========================================== -->
+<div class="user-navigation">
+
+    @* ==========================================
+       BRAND
+       ========================================== *@
 
     <div class="user-brand">
-
-        <a href="/dashboard"
-           class="user-brand-link">
+        <a href="/dashboard" class="user-brand-link">
 
             <div class="user-brand-logo">
-
-                <i class="bi bi-cross"></i>
-
+                <img src="images/logo.png"
+                     alt="Christian Centre Logo"
+                     class="user-brand-logo-img" />
             </div>
 
-
             <div class="user-brand-content">
-
                 <div class="user-brand-title">
                     CHRISTIAN
                     <br />
@@ -25,19 +25,16 @@
                 </div>
 
                 <div class="user-brand-subtitle">
-                    A PLACE OF HOPE, FAITH & FAMILY
+                    A PLACE OF HOPE, FAITH &amp; FAMILY
                 </div>
-
             </div>
 
         </a>
-
     </div>
 
-
-    <!-- ==========================================
-         NAVIGATION
-         ========================================== -->
+    @* ==========================================
+       NAVIGATION
+       ========================================== *@
 
     <div class="user-nav-section">
 
@@ -45,167 +42,89 @@
             MENU
         </div>
 
-
         <nav class="user-nav">
 
             <NavLink href="/user/dashboard"
                      Match="NavLinkMatch.All"
                      class="user-nav-item">
-
                 <i class="bi bi-grid-1x2-fill"></i>
-
-                <span>
-                    Dashboard
-                </span>
-
+                <span>Dashboard</span>
             </NavLink>
-
 
             <NavLink href="/user/sermons"
                      class="user-nav-item">
-
                 <i class="bi bi-play-circle-fill"></i>
-
-                <span>
-                    Sermons
-                </span>
-
+                <span>Sermons</span>
             </NavLink>
-
-
-            
-
 
             <NavLink href="/user/prayer-request"
                      class="user-nav-item">
-
                 <i class="bi bi-heart-fill"></i>
-
-                <span>
-                    Prayer Request
-                </span>
-
+                <span>Prayer Request</span>
             </NavLink>
-
 
             <NavLink href="/user/give"
                      class="user-nav-item">
-
                 <i class="bi bi-gift-fill"></i>
-
-                <span>
-                    Give
-                </span>
-
+                <span>Give</span>
             </NavLink>
-
 
             <NavLink href="/user/announcements"
                      class="user-nav-item">
-
                 <i class="bi bi-megaphone-fill"></i>
-
-                <span>
-                    Announcements
-                </span>
-
+                <span>Announcements</span>
             </NavLink>
-
 
             <NavLink href="/user/gallery"
                      class="user-nav-item">
-
                 <i class="bi bi-images"></i>
-
-                <span>
-                    Gallery
-                </span>
-
+                <span>Gallery</span>
             </NavLink>
-
 
             <NavLink href="/user/outreach"
                      class="user-nav-item">
-
                 <i class="bi bi-people-fill"></i>
-
-                <span>
-                    Outreach
-                </span>
-
+                <span>Outreach</span>
             </NavLink>
-
 
             <NavLink href="/user/messages"
                      class="user-nav-item">
-
                 <i class="bi bi-chat-left-text-fill"></i>
-
-                <span>
-                    Messages
-                </span>
-
+                <span>Messages</span>
             </NavLink>
-
 
             <NavLink href="/user/profile"
                      class="user-nav-item">
-
                 <i class="bi bi-person-circle"></i>
-
-                <span>
-                    Profile
-                </span>
-
+                <span>Profile</span>
             </NavLink>
 
         </nav>
-
     </div>
 
-
-    <!-- ==========================================
-         SIDEBAR BOTTOM
-         ========================================== -->
+    @* ==========================================
+       SIDEBAR BOTTOM
+       ========================================== *@
 
     <div class="user-sidebar-bottom">
 
         <div class="user-motto">
 
             <div class="user-motto-icon">
-
                 <i class="bi bi-heart-fill"></i>
-
             </div>
 
             <div class="user-motto-text">
-
-                <strong>
-                    Real People.
-                </strong>
-
-                <strong>
-                    Real Faith.
-                </strong>
-
-                <strong>
-                    A Greater Purpose.
-                </strong>
-
+                <strong>Real People.</strong>
+                <strong>Real Faith.</strong>
+                <strong>A Greater Purpose.</strong>
             </div>
 
         </div>
 
-
-        <a href="/logout"
-           class="user-logout">
-
+        <a href="/logout" class="user-logout">
             <i class="bi bi-box-arrow-right"></i>
-
-            <span>
-                Logout
-            </span>
-
+            <span>Logout</span>
         </a>
 
     </div>
